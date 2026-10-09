@@ -1,4 +1,6 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { storedReturnPath } from '@/libs/auth/return-path';
 import { getCurrentUser, SessionUnavailable } from '@/api/session';
 import { LoginForm } from '@/libs/components/account/LoginForm';
 import { SessionRetry } from '@/libs/components/account/SessionRetry';
@@ -11,7 +13,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
-  const returnTo = safeReturnPath((await searchParams).next);
+  const params = await searchParams;
+  const remembered = storedReturnPath(
+    (await cookies()).get('archy_return_to')?.value,
+  );
+  const returnTo = safeReturnPath(params.next ?? remembered);
   let user;
   try {
     user = await getCurrentUser();

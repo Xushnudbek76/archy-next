@@ -24,14 +24,15 @@ export default defineConfig({
           },
         ]),
     {
-      command: 'npm run dev -- --hostname 127.0.0.1 --port 3130',
+      command:
+        'npm run build && npm run start -- --hostname 127.0.0.1 --port 3130',
       url: 'http://127.0.0.1:3130/api/auth/csrf',
       env: {
         API_BASE_URL: 'http://127.0.0.1:3137',
         APP_ORIGIN: 'http://127.0.0.1:3130',
         NEXT_BUILD_DIR: '.next-auth',
       },
-      timeout: 60000,
+      timeout: 120000,
     },
   ],
 });

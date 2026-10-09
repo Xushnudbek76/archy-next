@@ -95,7 +95,7 @@ npm run test:e2e
 
 `check` runs formatting, ESLint, Node tests, generated route types, strict TypeScript and the
 production build. Browser tests automatically start an isolated HTTP fixture on port 3137 and
-a separate frontend on port 3130. They cover account creation, confirmation, incorrect credentials,
+a separate production build on port 3130. They cover account creation, confirmation, incorrect credentials,
 session refresh, failed/successful logout, password reset, invalid links, stale sessions, outage
 recovery, keyboard submission and mobile overflow. CI installs Chromium and runs these checks.
 
@@ -125,6 +125,9 @@ Protected pages read identity from Django on the server. Session loss redirects 
 a safe workspace destination; temporary API failures show a retry screen. The client rechecks
 identity when the tab regains focus. Email tokens require explicit submission, use no-referrer
 headers, and are removed from the visible address bar after the page loads.
+A short-lived cookie remembers only an allowlisted workspace destination through signup and
+confirmation. It contains no credential, is never forwarded to Django, and is cleared after
+successful login or logout.
 
 Before public launch, configure trusted client-IP handling and edge rate limits: Django currently
 sees the Next server's IP, so its authentication quotas are shared behind this transport. Do not

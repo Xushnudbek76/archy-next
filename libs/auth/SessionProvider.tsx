@@ -23,16 +23,21 @@ export function SessionProvider({
 }) {
   const [user, setUser] = useState(initialUser);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState('');
+  const [failure, setFailure] = useState<{
+    message: string;
+    action: 'check' | 'signOut';
+  } | null>(null);
   const checking = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
-  const retry = useCallback(async () => {
+  const checkSession = useCallback(async () => {
     if (checking.current) return;
     checking.current = true;
     try {
       setUser(await currentUser());
-      setError('');
+      setFailure((previous) =>
+        previous?.action === 'signOut' ? previous : null,
+      );
     } catch (cause) {
       if (
         cause instanceof AuthError &&
@@ -43,7 +48,14 @@ export function SessionProvider({
         );
         router.refresh();
       } else {
-        setError('Unable to check your account. Please retry.');
+        setFailure((previous) =>
+          previous?.action === 'signOut'
+            ? previous
+            : {
+                message: 'Unable to check your account. Please retry.',
+                action: 'check',
+              },
+        );
       }
     } finally {
       checking.current = false;
@@ -51,7 +63,7 @@ export function SessionProvider({
   }, [pathname, router]);
   useEffect(() => {
     const onFocus = () => {
-      if (document.visibilityState === 'visible') void retry();
+      if (document.visibilityState === 'visible') void checkSession();
     };
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onFocus);
@@ -59,23 +71,34 @@ export function SessionProvider({
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onFocus);
     };
-  }, [retry]);
+  }, [checkSession]);
   async function signOut() {
     if (pending) return;
     setPending(true);
-    setError('');
+    setFailure(null);
     try {
       await logOut();
       router.replace('/login');
       router.refresh();
     } catch {
-      setError('Unable to sign out. Please try again.');
+      setFailure({
+        message: 'Unable to sign out. Please try again.',
+        action: 'signOut',
+      });
     } finally {
       setPending(false);
     }
   }
   return (
-    <SessionContext.Provider value={{ user, pending, error, signOut, retry }}>
+    <SessionContext.Provider
+      value={{
+        user,
+        pending,
+        error: failure?.message ?? '',
+        signOut,
+        retry: failure?.action === 'signOut' ? signOut : checkSession,
+      }}
+    >
       {children}
     </SessionContext.Provider>
   );

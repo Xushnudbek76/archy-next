@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { signUp } from '@/libs/auth';
+import { returnPathCookie } from '@/libs/auth/return-path';
 import { useAuthForm } from '@/libs/hooks/useAuthForm';
 import { Field, PasswordField } from './AuthFields';
 import { AccountTabs, AuthSuccess, FormError } from './AuthFeedback';
@@ -15,7 +16,7 @@ export function SignupForm({ returnTo }: { returnTo: string }) {
   );
   if (sent)
     return (
-      <AuthSuccess title="Check your email">
+      <AuthSuccess title="Check your email" returnTo={returnTo}>
         If your address can be registered, you’ll receive a link to confirm it.
         Follow the link, then sign in.
       </AuthSuccess>
@@ -42,6 +43,10 @@ export function SignupForm({ returnTo }: { returnTo: string }) {
               password,
               passwordConfirmation,
             });
+            document.cookie = returnPathCookie(
+              returnTo,
+              window.location.protocol === 'https:',
+            );
             setSent(true);
           });
         }}

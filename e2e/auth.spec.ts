@@ -72,7 +72,7 @@ test('account lifecycle, session refresh, logout and password recovery', async (
   await expect(
     page.getByRole('heading', { name: 'Email confirmed' }),
   ).toBeVisible();
-  await page.goto('/login?next=/courses');
+  await page.getByRole('link', { name: 'Sign in', exact: true }).click();
   await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute(
     'type',
     'password',
@@ -105,20 +105,32 @@ test('account lifecycle, session refresh, logout and password recovery', async (
   );
   expect(session?.httpOnly).toBe(true);
   expect(
+    (await page.context().cookies()).some(
+      (cookie) => cookie.name === 'archy_return_to',
+    ),
+  ).toBe(false);
+  expect(
     await page.evaluate(() => localStorage.getItem('accessToken')),
   ).toBeNull();
-  await page.route('**/api/auth/logout', (route) =>
-    route.fulfill({
+  let logoutAttempts = 0;
+  await page.route('**/api/auth/logout', (route) => {
+    logoutAttempts++;
+    return route.fulfill({
       status: 503,
       contentType: 'application/json',
       body: '{"code":"unavailable"}',
-    }),
-  );
+    });
+  });
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(
     page.getByText('Unable to sign out. Please try again.'),
   ).toBeVisible();
   await expect(page).toHaveURL('/courses');
+  await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect.poll(() => logoutAttempts).toBe(2);
+  await expect(
+    page.getByText('Unable to sign out. Please try again.'),
+  ).toBeVisible();
   await page.unroute('**/api/auth/logout');
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL('/login');
@@ -149,6 +161,11 @@ test('account lifecycle, session refresh, logout and password recovery', async (
 });
 
 test('missing links and mobile account screens', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of [
     '/login',
@@ -168,6 +185,7 @@ test('missing links and mobile account screens', async ({ page }) => {
   await expect(
     page.getByText('This reset link is missing or invalid.'),
   ).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test('invalid confirmation and reset links explain how to recover', async ({

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { safeReturnPath } from '@/libs/types/auth';
 
 export function FormError({ message }: { message: string }) {
   return message ? (
@@ -11,9 +12,11 @@ export function FormError({ message }: { message: string }) {
 export function AuthSuccess({
   title,
   children,
+  returnTo = '/',
 }: {
   title: string;
   children: React.ReactNode;
+  returnTo?: string;
 }) {
   return (
     <div className="account-success" role="status">
@@ -22,7 +25,14 @@ export function AuthSuccess({
       </span>
       <h1>{title}</h1>
       <p>{children}</p>
-      <Link className="account-button" href="/login">
+      <Link
+        className="account-button"
+        href={
+          returnTo === '/'
+            ? '/login'
+            : `/login?next=${encodeURIComponent(safeReturnPath(returnTo))}`
+        }
+      >
         Sign in
       </Link>
     </div>
