@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build"
+    "check": "npm run format:check && npm run lint && npm test && npm run typecheck && npm run build",
+    "test": "node --conditions=react-server --experimental-strip-types --test tests/*.test.ts"
   },
   "dependencies": {
     "next": "16.4.0",
@@ -31,10 +32,11 @@
     "typescript-eslint": "8.71.1",
     "eslint-config-next": "16.4.0"
   },
-  "description": "Archy Next.js frontend \u2014 lecture workspace interface.",
+  "description": "Archy Next.js frontend — lecture workspace interface.",
   "engines": {
     "node": ">=24 <25",
     "npm": ">=11 <12"
   },
-  "packageManager": "npm@11.11.0"
+  "packageManager": "npm@11.11.0",
+  "type": "module"
 }
