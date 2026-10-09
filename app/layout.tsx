@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { WorkspaceLayout } from '@/libs/components/layout/WorkspaceLayout';
 import '@/styles/globals.css';
+import '@/styles/auth.css';
 
 export const metadata: Metadata = {
   title: { default: 'Archy — Your lecture workspace', template: '%s | Archy' },
@@ -13,9 +13,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>
-        <WorkspaceLayout>{children}</WorkspaceLayout>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

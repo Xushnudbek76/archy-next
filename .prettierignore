@@ -5,3 +5,7 @@ coverage
 package-lock.json
 .superpowers
 next-env.d.ts
+
+.next-*
+test-results
+playwright-report

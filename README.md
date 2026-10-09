@@ -2,36 +2,53 @@
 
 [![Frontend checks](https://github.com/Xushnudbek76/archy-next/actions/workflows/ci.yml/badge.svg)](https://github.com/Xushnudbek76/archy-next/actions/workflows/ci.yml)
 
-Archy is a lecture workspace for organizing courses, recordings, transcripts and notes. This repository contains its independently runnable Next.js frontend.
+Archy is a lecture workspace for organizing courses, recordings, transcripts and notes.
+This repository contains its independently runnable Next.js frontend.
 
-**Stage:** responsive workspace foundation. Overview, Courses, Recordings and Settings routes are present. The overview displays real API connection status; upcoming features have explicit empty states.
+Next.js App Router · React · TypeScript · Tailwind CSS · Node.js 24
 
-**Backend:** [archy](https://github.com/Xushnudbek76/archy).
+## Implemented
 
-## Technology and architecture
+- Responsive workspace navigation and API connection status.
+- Signup, email confirmation, login/logout and password recovery.
+- Server-checked account identity on every workspace page, with retry states for API outages.
+- Same-origin Django sessions with HttpOnly cookies, CSRF protection and restricted HTTP transport.
+- Account settings showing the current user's name and email.
+- Unit tests, browser flow tests and GitHub Actions checks.
 
-Next.js App Router, React, TypeScript, Tailwind CSS, Node.js 24, ESLint, Prettier and GitHub Actions.
+Courses and recordings currently have empty states. The overview illustration is decorative;
+course management, audio uploads, transcripts and AI notes follow.
+
+## Structure
 
 ```text
-app/                       Thin route entrypoints and layouts
-api/server.ts              Server-only HTTP transport
+app/
+  (account)/               Public account pages and their layout
+  (workspace)/             Protected workspace pages
+  api/                     Thin same-origin HTTP route handlers
+api/                       Server transport, identity lookup and browser request handling
 libs/
+  auth/                    Typed authentication helpers and session provider
   components/
+    account/               Account forms, feedback and profile
     common/                Shared icons and empty states
-    layout/                Workspace navigation and page shell
+    layout/                Workspace guard and navigation
     homepage/              Overview feature UI
-  hooks/                   Reserved for feature hooks
-  enums/
+  hooks/                   Shared authentication and form hooks
   types/                   Public HTTP response types
 styles/                    Application styles
-public/                    Static assets
+tests/                     Transport and identity tests
+e2e/                       Browser tests and an isolated HTTP fixture
 ```
 
-Routes compose components under `libs/components`. API access stays in server-only transport; domain rules and database access belong to the NestJS backend. Both repositories own their dependencies, lockfiles, environment configuration and CI. No filesystem import or npm workspace connects them.
+Routes compose focused components under `libs/components`, following the same conventions as
+Insu and Nestar. Domain rules, passwords and database access belong to the separate
+[Django backend](https://github.com/Xushnudbek76/archy-api). Each repository owns its dependencies,
+lockfile, environment and CI. The frontend imports no backend source or database clients.
 
 ## Local development
 
-Prerequisites: Node.js 24.14.1, npm 11.11.0 and Git.
+Use Node.js 24 and npm 11.
 
 ```sh
 git clone https://github.com/Xushnudbek76/archy-next.git
@@ -41,31 +58,80 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-Open <http://localhost:3000>. Clone and start the [backend](https://github.com/Xushnudbek76/archy) in another terminal with `npm run start:dev`.
+Open [Archy locally](http://localhost:3000). In a separate terminal, configure
+`archy-api` using its README and start it with:
 
-The frontend installs and builds without backend source or credentials. If the API is unavailable, the overview displays its unavailable state. Stop each process with Ctrl+C.
+```sh
+python manage.py runserver 127.0.0.1:3007
+```
+
+Set the frontend's `APP_ORIGIN` and Django's `FRONTEND_ORIGIN` to the exact browser origin,
+including scheme and port. The default is `http://localhost:3000`. Use that browser hostname
+consistently so cookies belong to one host.
+
+Development email links are private files under `archy-api/.local/mail`; open the link from
+the newest email to confirm an account or reset a password. Configure real email delivery in
+the backend before inviting users.
 
 ## Configuration
 
-`API_BASE_URL` defaults to `http://127.0.0.1:3007` and is read only on the server. Set it in the root `.env.local` if the API address changes. Do not prefix private server configuration with `NEXT_PUBLIC_`.
+| Variable         | Default                 | Purpose                                                           |
+| ---------------- | ----------------------- | ----------------------------------------------------------------- |
+| `API_BASE_URL`   | `http://127.0.0.1:3007` | Django origin, accessed only by the Next server                   |
+| `APP_ORIGIN`     | `http://localhost:3000` | Exact trusted browser origin                                      |
+| `NEXT_BUILD_DIR` | `.next`                 | Optional separate build directory for parallel local verification |
 
-The health request uses a timeout, bypasses caching and validates the response before showing a connected status.
+Do not prefix these values with `NEXT_PUBLIC_`. Production origins require HTTPS, except loopback
+addresses used for local verification. Set both origins explicitly when deploying.
 
-## Verification and build
+## Checks
 
 ```sh
 npm run check
 npm audit --omit=dev
+npx playwright install chromium
+npm run test:e2e
 ```
 
-`check` runs formatting, ESLint, route type generation, strict TypeScript and the Next.js production build. Individual commands: `npm run lint`, `npm run typecheck` and `npm run build`. After building, `npm start` serves the production build on port 3000. CI runs checks on pushes and pull requests.
+`check` runs formatting, ESLint, Node tests, generated route types, strict TypeScript and the
+production build. Browser tests automatically start an isolated HTTP fixture on port 3137 and
+a separate frontend on port 3130. They cover account creation, confirmation, incorrect credentials,
+session refresh, failed/successful logout, password reset, invalid links, stale sessions, outage
+recovery, keyboard submission and mobile overflow. CI installs Chromium and runs these checks.
 
-Local browser checks cover all four routes, real backend communication and the mobile layout. See [architecture and verification](https://github.com/Xushnudbek76/archy/blob/main/docs/separated-projects-verification.md) in the backend repository.
+For a supported browser already installed on an older Mac, set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its absolute executable path.
 
-## Next milestones
+Local integration also ran the account flow against the actual Django API and disposable
+PostgreSQL, using private test emails. To repeat it, configure an isolated backend on port 3137
+with `FRONTEND_ORIGIN=http://127.0.0.1:3130` and file email output, then run:
 
-Authentication, owner-scoped course screens, audio uploads, transcripts and AI notes are future work. The current UI contains no persisted course or recording data; its lecture-note illustration is decorative.
+```sh
+REAL_API=1 AUTH_EMAIL_DIR=/absolute/path/to/test/mail npm run test:e2e
+```
+
+Use a disposable loopback database for this test; it creates accounts and resets passwords.
+The controlled outage test runs against the fixture only. These browser tests do not prove SMTP
+delivery or public deployment.
+
+## Session flow
+
+The browser requests `/api/auth/csrf` before each account mutation. Next forwards only allowlisted
+JSON endpoints, session/CSRF cookies and the CSRF header to Django. Unsafe requests require the
+exact `APP_ORIGIN`; redirects, oversized bodies and upstream failures are rejected or sanitized.
+Response cookies are scoped to the frontend, with HttpOnly sessions and Secure cookies on HTTPS.
+
+Protected pages read identity from Django on the server. Session loss redirects to sign in with
+a safe workspace destination; temporary API failures show a retry screen. The client rechecks
+identity when the tab regains focus. Email tokens require explicit submission, use no-referrer
+headers, and are removed from the visible address bar after the page loads.
+
+Before public launch, configure trusted client-IP handling and edge rate limits: Django currently
+sees the Next server's IP, so its authentication quotas are shared behind this transport. Do not
+forward arbitrary browser IP headers. Also configure delivery, HTTPS and log redaction for email
+link query strings. These are deployment work, separate from the implemented local account flow.
 
 ## Contributing
 
-Use feature branches and focused pull requests. Include the behavior change, verification and screenshots when UI changes. Run `npm run check` before submitting. Use `feat` for new behavior, `fix` for actual corrections, and other conventional prefixes where appropriate.
+Use focused branches and pull requests. Run the checks before submitting. Keep real authorship
+and commit dates; use `feat` for new behavior and `fix` for actual corrections.

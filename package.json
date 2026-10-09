@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm test && npm run typecheck && npm run build",
-    "test": "node --conditions=react-server --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --conditions=react-server --experimental-strip-types --test tests/*.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "next": "16.4.0",
@@ -20,17 +21,18 @@
     "server-only": "0.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.64.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.19.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.2.3",
-    "tailwindcss": "4.3.3",
-    "@eslint/js": "9.39.5",
     "eslint": "9.39.5",
+    "eslint-config-next": "16.4.0",
     "prettier": "3.9.9",
+    "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.71.1",
-    "eslint-config-next": "16.4.0"
+    "typescript-eslint": "8.71.1"
   },
   "description": "Archy Next.js frontend — lecture workspace interface.",
   "engines": {

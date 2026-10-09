@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from '@/libs/components/common/Icon';
+import { useAuth } from '@/libs/hooks/useAuth';
 
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'Overview', icon: 'grid' },
@@ -13,6 +14,7 @@ const navigation: { href: string; label: string; icon: IconName }[] = [
 
 export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const auth = useAuth();
 
   return (
     <div className="workspace">
@@ -65,8 +67,27 @@ export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
                 'Overview'}
             </strong>
           </span>
-          <span className="workspace-badge">Personal workspace</span>
+          <div className="account-menu">
+            <Link href="/settings">
+              {auth.user.displayName || auth.user.email}
+            </Link>
+            <button
+              type="button"
+              disabled={auth.pending}
+              onClick={() => void auth.signOut()}
+            >
+              {auth.pending ? 'Signing out…' : 'Sign out'}
+            </button>
+          </div>
         </header>
+        {auth.error ? (
+          <div className="session-notice" role="alert">
+            {auth.error}{' '}
+            <button type="button" onClick={() => void auth.retry()}>
+              Retry
+            </button>
+          </div>
+        ) : null}
         <main id="main-content" tabIndex={-1}>
           {children}
         </main>
