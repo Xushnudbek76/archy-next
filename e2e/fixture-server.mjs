@@ -2,6 +2,7 @@
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { URL } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 const users = new Map();
 const sessions = new Map();
 const emails = new Map();
@@ -62,6 +63,7 @@ createServer(async (request, response) => {
       user.profile.email,
       `http://127.0.0.1:3130/confirm-email?token=${user.profile.id}`,
     );
+    if (data.email.startsWith('delayed-signup-')) await delay(6000);
     return reply(202, { message: 'Check your email for the next step.' });
   }
   if (path === '/v1/auth/confirm-email') {

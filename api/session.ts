@@ -1,5 +1,6 @@
 import 'server-only';
 import { cookies } from 'next/headers';
+import { AUTH_READ_TIMEOUT_MS } from './auth-timeouts.ts';
 import { authConfiguration, sessionCookies } from './auth-proxy.ts';
 import { isUser, type User } from '../libs/types/auth.ts';
 
@@ -15,7 +16,7 @@ export async function getCurrentUser(): Promise<User | null> {
         headers: { Cookie: cookie },
         cache: 'no-store',
         redirect: 'manual',
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(AUTH_READ_TIMEOUT_MS),
       },
     );
     if (response.status === 403 || response.status === 401) return null;

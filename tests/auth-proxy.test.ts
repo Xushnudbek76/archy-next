@@ -5,6 +5,7 @@ import { forwardAuthRequest } from '../api/auth-proxy.ts';
 
 const origin = 'http://localhost:3000';
 let base = '';
+let acceptedWrites = 0;
 let last: {
   path?: string;
   cookie?: string;
@@ -27,8 +28,20 @@ const server = createServer(async (req: IncomingMessage, res) => {
     res.end();
     return;
   }
-  if (body.includes('slow')) {
-    const timer = setTimeout(() => res.end('{}'), 6000);
+  if (body.includes('delayedAccepted')) {
+    acceptedWrites++;
+    const timer = setTimeout(() => {
+      res.writeHead(202, { 'Content-Type': 'application/json' });
+      res.end('{"message":"Check your email for the next step."}');
+    }, 6000);
+    res.on('close', () => clearTimeout(timer));
+    return;
+  }
+  if (body.includes('slow') || req.headers.cookie?.includes('slow-read')) {
+    const timer = setTimeout(
+      () => res.end('{}'),
+      req.method === 'POST' ? 16000 : 6000,
+    );
     res.on('close', () => clearTimeout(timer));
     return;
   }
@@ -175,13 +188,42 @@ test('HTTPS cookies are secure and expiry survives sanitized errors', async () =
   assert(!JSON.stringify(await response.json()).includes('upstream detail'));
 });
 
-test('slow upstream requests time out with a sanitized failure', async () => {
+test('slow reads retain a short timeout with a sanitized failure', async () => {
+  const start = Date.now();
+  const response = await forwardAuthRequest(
+    new Request(`${origin}/api/auth/csrf`, {
+      headers: { Cookie: 'sessionid=slow-read' },
+    }),
+    'csrf',
+    config(),
+  );
+  assert.equal(response.status, 504);
+  assert.equal((await response.json()).code, 'timeout');
+  assert(Date.now() - start < 5800);
+});
+
+test('accepted signup taking over five seconds succeeds without replaying the write', async () => {
+  const response = await forwardAuthRequest(
+    request('{"delayedAccepted":true}'),
+    'signup',
+    config(),
+  );
+  assert.equal(response.status, 202);
+  assert.equal(
+    (await response.json()).message,
+    'Check your email for the next step.',
+  );
+  assert.equal(acceptedWrites, 1);
+});
+
+test('unresponsive account writes still have a bounded timeout', async () => {
   const start = Date.now();
   const response = await forwardAuthRequest(
     request('{"slow":true}'),
-    'login',
+    'signup',
     config(),
   );
-  assert.equal(response.status, 503);
-  assert(Date.now() - start < 5800);
+  assert.equal(response.status, 504);
+  assert.equal((await response.json()).code, 'timeout');
+  assert(Date.now() - start < 18000);
 });

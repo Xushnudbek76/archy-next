@@ -250,3 +250,37 @@ test('account outage offers a retry without pretending to sign out', async ({
     (await context.cookies()).some((cookie) => cookie.name === 'sessionid'),
   ).toBe(true);
 });
+
+test('a delayed accepted signup shows success without a second submission', async ({
+  page,
+}) => {
+  test.skip(
+    Boolean(process.env.REAL_API),
+    'Delay is controlled only in the isolated fixture',
+  );
+  let submissions = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/auth/signup') submissions++;
+  });
+  await page.goto('/signup');
+  await page.getByLabel('Name', { exact: true }).fill('Slow connection');
+  await page
+    .getByLabel('Email', { exact: true })
+    .fill(`delayed-signup-${Date.now()}@example.com`);
+  await page
+    .getByLabel('Password', { exact: true })
+    .fill('Unique-delayed-passphrase-764!');
+  await page
+    .getByLabel('Confirm password', { exact: true })
+    .fill('Unique-delayed-passphrase-764!');
+  await page
+    .getByRole('button', { name: 'Create account', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Creating account…' }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole('heading', { name: 'Check your email' }),
+  ).toBeVisible();
+  expect(submissions).toBe(1);
+});

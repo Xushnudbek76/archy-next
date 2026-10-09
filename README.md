@@ -120,6 +120,10 @@ The browser requests `/api/auth/csrf` before each account mutation. Next forward
 JSON endpoints, session/CSRF cookies and the CSRF header to Django. Unsafe requests require the
 exact `APP_ORIGIN`; redirects, oversized bodies and upstream failures are rejected or sanitized.
 Response cookies are scoped to the frontend, with HttpOnly sessions and Secure cookies on HTTPS.
+Identity and CSRF reads have a five-second upstream timeout. Account mutations allow fifteen
+seconds for password hashing and database writes; the browser waits twenty seconds for mutations.
+Timed-out writes are never replayed automatically. Signup/reset timeout messages explain that
+the request may have completed and ask the user to check their email before retrying.
 
 Protected pages read identity from Django on the server. Session loss redirects to sign in with
 a safe workspace destination; temporary API failures show a retry screen. The client rechecks

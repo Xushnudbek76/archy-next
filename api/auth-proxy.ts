@@ -1,5 +1,9 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
+import {
+  AUTH_READ_TIMEOUT_MS,
+  AUTH_WRITE_TIMEOUT_MS,
+} from './auth-timeouts.ts';
 
 export type AuthConfiguration = { apiBaseUrl: string; appOrigin: string };
 const routes: Record<string, { path: string; method: string }> = {
@@ -21,6 +25,10 @@ const errors: Record<number, [string, string]> = {
   415: ['invalid_request', 'Send a JSON request.'],
   429: ['rate_limited', 'Too many attempts. Please try again later.'],
   503: ['unavailable', 'Archy is temporarily unavailable. Please try again.'],
+  504: [
+    'timeout',
+    'Archy took too long to respond. The request may already have completed.',
+  ],
 };
 
 export function authConfiguration(): AuthConfiguration {
@@ -157,7 +165,9 @@ export async function forwardAuthRequest(
       body,
       cache: 'no-store',
       redirect: 'manual',
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(
+        route.method === 'POST' ? AUTH_WRITE_TIMEOUT_MS : AUTH_READ_TIMEOUT_MS,
+      ),
     });
     if (upstream.status >= 300 && upstream.status < 400)
       return errorResponse(503, id, headers);
@@ -179,7 +189,11 @@ export async function forwardAuthRequest(
     return Response.json(payload, { status: upstream.status, headers });
   } catch (error) {
     return errorResponse(
-      typeof error === 'number' && errors[error] ? error : 503,
+      error instanceof Error && error.name === 'TimeoutError'
+        ? 504
+        : typeof error === 'number' && errors[error]
+          ? error
+          : 503,
       id,
       headers,
     );
