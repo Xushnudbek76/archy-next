@@ -88,7 +88,9 @@ async function jsonBody(request: Request): Promise<string> {
     !request.headers
       .get('Content-Type')
       ?.toLowerCase()
-      .startsWith('application/json')
+      .split(';')[0]
+      ?.trim()
+      .match(/^application\/json$/)
   )
     throw 415;
   const reader = request.body?.getReader();

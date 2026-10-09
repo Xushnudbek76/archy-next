@@ -27,6 +27,21 @@ const server = createServer(async (req: IncomingMessage, res) => {
     res.end();
     return;
   }
+  if (body.includes('slow')) {
+    const timer = setTimeout(() => res.end('{}'), 6000);
+    res.on('close', () => clearTimeout(timer));
+    return;
+  }
+  if (body.includes('expired')) {
+    res.writeHead(403, {
+      'Set-Cookie': [
+        'sessionid=; Domain=backend.example; Path=/v1; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+        'tracking=private; Path=/',
+      ],
+    });
+    res.end('{"private":"upstream detail"}');
+    return;
+  }
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Set-Cookie', [
     'sessionid=new-session; Domain=backend.example; Path=/v1; HttpOnly; SameSite=Lax',
@@ -131,4 +146,42 @@ test('connection failure is sanitized', async () => {
   });
   assert.equal(response.status, 503);
   assert(!JSON.stringify(await response.json()).includes('127.0.0.1'));
+});
+
+test('only the exact JSON media type is accepted', async () => {
+  const response = await forwardAuthRequest(
+    request('{}', { 'Content-Type': 'application/jsonp' }),
+    'login',
+    config(),
+  );
+  assert.equal(response.status, 415);
+});
+
+test('HTTPS cookies are secure and expiry survives sanitized errors', async () => {
+  const secureOrigin = 'https://archy.example';
+  const response = await forwardAuthRequest(
+    request('{"expired":true}', { Origin: secureOrigin }),
+    'login',
+    { apiBaseUrl: base, appOrigin: secureOrigin },
+  );
+  assert.equal(response.status, 403);
+  const cookies = response.headers.getSetCookie();
+  assert.equal(cookies.length, 1);
+  assert(cookies[0]?.includes('Expires=Thu, 01 Jan 1970 00:00:00 GMT'));
+  assert(cookies[0]?.includes('Max-Age=0'));
+  assert(cookies[0]?.includes('Secure'));
+  assert(cookies[0]?.includes('HttpOnly'));
+  assert(!cookies[0]?.includes('Domain='));
+  assert(!JSON.stringify(await response.json()).includes('upstream detail'));
+});
+
+test('slow upstream requests time out with a sanitized failure', async () => {
+  const start = Date.now();
+  const response = await forwardAuthRequest(
+    request('{"slow":true}'),
+    'login',
+    config(),
+  );
+  assert.equal(response.status, 503);
+  assert(Date.now() - start < 5800);
 });
