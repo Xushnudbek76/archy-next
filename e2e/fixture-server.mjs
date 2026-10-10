@@ -6,6 +6,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 const users = new Map();
 const sessions = new Map();
 const emails = new Map();
+const courses = new Map();
+function publicCourse(course) {
+  const value = { ...course };
+  delete value.owner;
+  return value;
+}
 const csrf = 'testcsrf01234567890123456789012345';
 createServer(async (request, response) => {
   const path = request.url;
@@ -40,13 +46,56 @@ createServer(async (request, response) => {
     return fail(503);
   if (path === '/v1/users/me')
     return user ? reply(200, user.profile) : fail(403);
+  const url = new URL(path, 'http://localhost');
+  if (url.pathname === '/v1/courses' && request.method === 'GET') {
+    if (!user) return fail(403);
+    const archived = url.searchParams.get('archived') === 'true';
+    const owned = [...courses.values()]
+      .filter(
+        (c) =>
+          c.owner === user.profile.id && Boolean(c.archivedAt) === archived,
+      )
+      .reverse();
+    const page = Number(url.searchParams.get('page') ?? 1);
+    if (page > 1 && (page - 1) * 20 >= owned.length) return fail(404);
+    return reply(200, {
+      items: owned.slice((page - 1) * 20, page * 20).map(publicCourse),
+      total: owned.length,
+      nextPage: page * 20 < owned.length ? page + 1 : null,
+    });
+  }
   if (
-    request.method !== 'POST' ||
+    !['POST', 'PATCH'].includes(request.method) ||
     request.headers.origin !== 'http://127.0.0.1:3130' ||
     !cookie.includes(`csrftoken=${csrf}`) ||
     request.headers['x-csrftoken'] !== csrf
   )
     return fail(403);
+  if (url.pathname.startsWith('/v1/courses')) {
+    if (!user) return fail(403);
+    if (path === '/v1/courses' && request.method === 'POST') {
+      const now = new Date().toISOString();
+      const course = {
+        id: randomUUID(),
+        title: data.title.trim(),
+        archivedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      courses.set(course.id, { ...course, owner: user.profile.id });
+      return reply(201, course);
+    }
+    const parts = url.pathname.split('/');
+    const course = courses.get(parts[3]);
+    if (!course || course.owner !== user.profile.id) return fail(404);
+    if (request.method === 'PATCH' && !course.archivedAt)
+      course.title = data.title.trim();
+    else if (request.method === 'POST' && parts[4] === 'archive')
+      course.archivedAt ??= new Date().toISOString();
+    else return fail(404);
+    course.updatedAt = new Date().toISOString();
+    return reply(200, publicCourse(course));
+  }
   if (path === '/v1/auth/signup') {
     const user = {
       profile: {

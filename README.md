@@ -14,10 +14,11 @@ Next.js App Router · React · TypeScript · Tailwind CSS · Node.js 24
 - Server-checked account identity on every workspace page, with retry states for API outages.
 - Same-origin Django sessions with HttpOnly cookies, CSRF protection and restricted HTTP transport.
 - Account settings showing the current user's name and email.
+- Private course creation, paginated active/archived lists, renaming and archiving.
 - Unit tests, browser flow tests and GitHub Actions checks.
 
-Courses and recordings currently have empty states. The overview illustration is decorative;
-course management, audio uploads, transcripts and AI notes follow.
+Recordings currently have an empty state. The overview illustration is decorative;
+audio uploads, transcripts and AI notes follow.
 
 ## Structure
 
@@ -31,6 +32,7 @@ libs/
   auth/                    Typed authentication helpers and session provider
   components/
     account/               Account forms, feedback and profile
+    courses/               Course forms, cards and active/archived workspace
     common/                Shared icons and empty states
     layout/                Workspace guard and navigation
     homepage/              Overview feature UI
@@ -132,6 +134,20 @@ headers, and are removed from the visible address bar after the page loads.
 A short-lived cookie remembers only an allowlisted workspace destination through signup and
 confirmation. It contains no credential, is never forwarded to Django, and is cleared after
 successful login or logout.
+
+## Courses
+
+`/courses` provides creation, rename, archive confirmation, and active/archived views with
+20 courses per page. Archiving keeps the course; restoring and deleting are not implemented.
+Thin `/api/courses` routes reuse the verified JSON transport and forward only fixed paths,
+supported query parameters, session cookies and CSRF headers. Django owns validation,
+ownership and transactions. The frontend checks response shapes before displaying them.
+Reads and writes are uncached. Timed-out writes are not replayed; refresh the list before retrying.
+Failed saves preserve entered titles, and list failures provide a retry action.
+
+Browser tests cover persistence after reload, rename failure/retry, archive cancellation,
+mobile layout, list outage/retry and two-user isolation. They can also run against the actual
+Django API with the isolated database and email setup described above.
 
 Before public launch, configure trusted client-IP handling and edge rate limits: Django currently
 sees the Next server's IP, so its authentication quotas are shared behind this transport. Do not
