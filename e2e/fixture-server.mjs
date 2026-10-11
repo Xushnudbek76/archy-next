@@ -1,8 +1,10 @@
 // Isolated browser-test HTTP fixture. Never imported by the application.
+import { Buffer } from 'node:buffer';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { URL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
+import { recordingsFixture } from './recordings-fixture.mjs';
 const users = new Map();
 const sessions = new Map();
 const emails = new Map();
@@ -15,9 +17,15 @@ function publicCourse(course) {
 const csrf = 'testcsrf01234567890123456789012345';
 createServer(async (request, response) => {
   const path = request.url;
-  let raw = '';
-  for await (const chunk of request) raw += chunk;
-  const data = raw ? JSON.parse(raw) : {};
+  const chunks = [];
+  for await (const chunk of request) chunks.push(chunk);
+  const raw = Buffer.concat(chunks);
+  const data =
+    request.headers['content-type'] === 'application/octet-stream'
+      ? raw
+      : raw.length
+        ? JSON.parse(raw.toString())
+        : {};
   const reply = (status, payload) => {
     response.writeHead(status, { 'Content-Type': 'application/json' });
     response.end(JSON.stringify(payload));
@@ -46,6 +54,10 @@ createServer(async (request, response) => {
     return fail(503);
   if (path === '/v1/users/me')
     return user ? reply(200, user.profile) : fail(403);
+  if (
+    recordingsFixture(request, response, user, courses, data, reply, fail, csrf)
+  )
+    return;
   const url = new URL(path, 'http://localhost');
   if (url.pathname === '/v1/courses' && request.method === 'GET') {
     if (!user) return fail(403);

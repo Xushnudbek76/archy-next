@@ -120,7 +120,14 @@ async function jsonBody(request: Request): Promise<string> {
 
 export async function forwardJsonRequest(
   request: Request,
-  route: { path: string; method: string } | undefined,
+  route:
+    | {
+        path: string;
+        method: string;
+        timeoutMs?: number;
+        errorMessages?: Readonly<Record<string, string>>;
+      }
+    | undefined,
   supplied?: AuthConfiguration,
 ): Promise<Response> {
   const id = randomUUID();
@@ -155,7 +162,10 @@ export async function forwardJsonRequest(
       cache: 'no-store',
       redirect: 'manual',
       signal: AbortSignal.timeout(
-        route.method === 'GET' ? AUTH_READ_TIMEOUT_MS : AUTH_WRITE_TIMEOUT_MS,
+        route.timeoutMs ??
+          (route.method === 'GET'
+            ? AUTH_READ_TIMEOUT_MS
+            : AUTH_WRITE_TIMEOUT_MS),
       ),
     });
     if (upstream.status >= 300 && upstream.status < 400)
@@ -168,12 +178,29 @@ export async function forwardJsonRequest(
       const retry = upstream.headers.get('Retry-After');
       if (retry && /^\d{1,6}$/.test(retry)) headers.set('Retry-After', retry);
     }
-    if (!upstream.ok)
+    if (!upstream.ok) {
+      if (route.errorMessages) {
+        const payload: unknown = await upstream.json().catch(() => null);
+        const code =
+          payload &&
+          typeof payload === 'object' &&
+          'code' in payload &&
+          typeof payload.code === 'string'
+            ? payload.code
+            : '';
+        const message = route.errorMessages[code];
+        if (message && [400, 409, 413, 507].includes(upstream.status))
+          return Response.json(
+            { code, message, requestId: id },
+            { status: upstream.status, headers },
+          );
+      }
       return errorResponse(
         errors[upstream.status] ? upstream.status : 503,
         id,
         headers,
       );
+    }
     const payload: unknown = await upstream.json();
     return Response.json(payload, { status: upstream.status, headers });
   } catch (error) {

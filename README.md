@@ -15,10 +15,10 @@ Next.js App Router · React · TypeScript · Tailwind CSS · Node.js 24
 - Same-origin Django sessions with HttpOnly cookies, CSRF protection and restricted HTTP transport.
 - Account settings showing the current user's name and email.
 - Private course creation, paginated active/archived lists, renaming and archiving.
+- Private audio uploads with progress, pause/resume, cancellation and native playback.
 - Unit tests, browser flow tests and GitHub Actions checks.
 
-Recordings currently have an empty state. The overview illustration is decorative;
-audio uploads, transcripts and AI notes follow.
+Transcripts and AI notes follow. The overview illustration is decorative.
 
 ## Structure
 
@@ -33,6 +33,7 @@ libs/
   components/
     account/               Account forms, feedback and profile
     courses/               Course forms, cards and active/archived workspace
+    recordings/            Upload forms, saved recordings and private audio players
     common/                Shared icons and empty states
     layout/                Workspace guard and navigation
     homepage/              Overview feature UI
@@ -148,6 +149,23 @@ Failed saves preserve entered titles, and list failures provide a retry action.
 Browser tests cover persistence after reload, rename failure/retry, archive cancellation,
 mobile layout, list outage/retry and two-user isolation. They can also run against the actual
 Django API with the isolated database and email setup described above.
+
+## Recordings
+
+`/recordings` uploads audio into an active course, lists saved lectures and plays them through
+private session-checked routes. There is no duration cap. Browser hashing and transfer use
+4 MiB slices so long files are never loaded completely into memory. Uploads can be paused,
+cancelled or resumed after reselecting the original file. Confirmed offsets live in Django;
+a lost response is reconciled before the next chunk is sent.
+
+Audio stays on the backend's private persistent volume. Native playback supports byte ranges
+for seeking and requires the current user's session. The Next server streams audio rather
+than buffering it. Django validates checksums and actual audio format before saving metadata.
+
+Browser coverage includes a three-hour recording, interrupted upload/reload/resume, wrong-file
+rejection, invalid media, cancellation/restart, native seeking and account isolation. These
+flows also run against actual Django and disposable PostgreSQL. See the backend's
+[storage requirements](https://github.com/Xushnudbek76/archy-api/blob/master/docs/recordings.md).
 
 Before public launch, configure trusted client-IP handling and edge rate limits: Django currently
 sees the Next server's IP, so its authentication quotas are shared behind this transport. Do not

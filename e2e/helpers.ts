@@ -28,3 +28,33 @@ export async function emailLink(
   }
   throw new Error('Test email not found');
 }
+
+export async function signInTestUser(
+  context: import('@playwright/test').BrowserContext,
+  email: string,
+) {
+  const request = context.request;
+  const password = 'Private-course-test-passphrase-821!';
+  const post = async (path: string, data: unknown) => {
+    const csrf = (await (await request.get('/api/auth/csrf')).json()).csrfToken;
+    return request.post(path, {
+      data,
+      headers: { Origin: 'http://127.0.0.1:3130', 'X-CSRFToken': csrf },
+    });
+  };
+  const signup = await post('/api/auth/signup', {
+    email,
+    password,
+    passwordConfirmation: password,
+    displayName: 'Lecture Owner',
+  });
+  if (signup.status() !== 202) throw new Error('Test account signup failed');
+  const token = new URL(await emailLink(request, email)).searchParams.get(
+    'token',
+  );
+  if ((await post('/api/auth/confirm-email', { token })).status() !== 200)
+    throw new Error('Test confirmation failed');
+  if ((await post('/api/auth/login', { email, password })).status() !== 200)
+    throw new Error('Test login failed');
+  return post;
+}

@@ -25,6 +25,7 @@ export async function jsonRequest(
   path: string,
   payload?: unknown,
   method: 'POST' | 'PATCH' = 'POST',
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<unknown> {
   try {
     let csrf: string | undefined;
@@ -48,11 +49,15 @@ export async function jsonRequest(
           ? undefined
           : { 'Content-Type': 'application/json', 'X-CSRFToken': csrf! },
       body: payload === undefined ? undefined : JSON.stringify(payload),
-      signal: AbortSignal.timeout(
-        payload === undefined
-          ? AUTH_CLIENT_READ_TIMEOUT_MS
-          : AUTH_CLIENT_WRITE_TIMEOUT_MS,
-      ),
+      signal: AbortSignal.any([
+        ...(options.signal ? [options.signal] : []),
+        AbortSignal.timeout(
+          options.timeoutMs ??
+            (payload === undefined
+              ? AUTH_CLIENT_READ_TIMEOUT_MS
+              : AUTH_CLIENT_WRITE_TIMEOUT_MS),
+        ),
+      ]),
     });
     const value: unknown = await response.json();
     if (!response.ok) {
@@ -73,6 +78,7 @@ export async function jsonRequest(
     }
     return value;
   } catch (error) {
+    if (options.signal?.aborted) throw options.signal.reason;
     if (error instanceof ApiError) throw error;
     if (error instanceof Error && error.name === 'TimeoutError')
       throw new ApiError(504, 'timeout', timeoutMessage(path));

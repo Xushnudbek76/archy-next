@@ -715,3 +715,67 @@ h3 {
     transition: none !important;
   }
 }
+
+.recording-upload fieldset {
+  border: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.recording-upload label,
+.pending-uploads label {
+  font-weight: 600;
+}
+.recording-upload input,
+.recording-upload select,
+.pending-uploads input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+}
+.recording-upload input[type='file'],
+.pending-uploads input[type='file'] {
+  font-size: 13px;
+}
+.recording-upload button[type='submit'] {
+  justify-self: start;
+}
+.upload-progress {
+  padding: 18px;
+  margin-block: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.upload-progress progress {
+  display: block;
+  width: 100%;
+  accent-color: var(--green);
+  margin-block: 12px;
+}
+.recording-card audio {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+}
+.recording-card h2,
+.pending-uploads h3 {
+  overflow-wrap: anywhere;
+}
+.pending-uploads {
+  margin-block: 24px;
+}
+.pending-uploads form {
+  display: grid;
+  gap: 10px;
+}
+.pending-uploads .course-caption {
+  margin-bottom: 14px;
+}
+.recording-success {
+  color: var(--green);
+  margin-block: 20px;
+}
