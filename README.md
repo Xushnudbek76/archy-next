@@ -176,3 +176,7 @@ link query strings. These are deployment work, separate from the implemented loc
 
 Use focused branches and pull requests. Run the checks before submitting. Keep real authorship
 and commit dates; use `feat` for new behavior and `fix` for actual corrections.
+
+## Lecture processing
+
+Recording cards have an expandable transcript/notes panel. It reads private saved results from FastAPI, polls only while processing is active, and renders provider content as text. Groq credentials and background work belong entirely to `../archy-api`. Synthetic test results are labelled in the panel. See the backend's `docs/processing.md` for setup and recovery.
