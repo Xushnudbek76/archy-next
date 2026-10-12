@@ -12,7 +12,7 @@ Next.js App Router · React · TypeScript · Tailwind CSS · Node.js 24
 - Responsive workspace navigation and API connection status.
 - Signup, email confirmation, login/logout and password recovery.
 - Server-checked account identity on every workspace page, with retry states for API outages.
-- Same-origin Django sessions with HttpOnly cookies, CSRF protection and restricted HTTP transport.
+- Same-origin FastAPI sessions with HttpOnly cookies, CSRF protection and restricted HTTP transport.
 - Account settings showing the current user's name and email.
 - Private course creation, paginated active/archived lists, renaming and archiving.
 - Private audio uploads with progress, pause/resume, cancellation and native playback.
@@ -46,7 +46,7 @@ e2e/                       Browser tests and an isolated HTTP fixture
 
 Routes compose focused components under `libs/components`, following the same conventions as
 Insu and Nestar. Domain rules, passwords and database access belong to the separate
-[Django backend](https://github.com/Xushnudbek76/archy-api). Each repository owns its dependencies,
+[FastAPI backend](https://github.com/Xushnudbek76/archy-api). Each repository owns its dependencies,
 lockfile, environment and CI. The frontend imports no backend source or database clients.
 
 ## Local development
@@ -68,7 +68,7 @@ Open [Archy locally](http://localhost:3000). In a separate terminal, configure
 python manage.py runserver 127.0.0.1:3007
 ```
 
-Set the frontend's `APP_ORIGIN` and Django's `FRONTEND_ORIGIN` to the exact browser origin,
+Set the frontend's `APP_ORIGIN` and FastAPI's `FRONTEND_ORIGIN` to the exact browser origin,
 including scheme and port. The default is `http://localhost:3000`. Use that browser hostname
 consistently so cookies belong to one host.
 
@@ -80,7 +80,7 @@ the backend before inviting users.
 
 | Variable         | Default                 | Purpose                                                           |
 | ---------------- | ----------------------- | ----------------------------------------------------------------- |
-| `API_BASE_URL`   | `http://127.0.0.1:3007` | Django origin, accessed only by the Next server                   |
+| `API_BASE_URL`   | `http://127.0.0.1:3007` | FastAPI origin, accessed only by the Next server                  |
 | `APP_ORIGIN`     | `http://localhost:3000` | Exact trusted browser origin                                      |
 | `NEXT_BUILD_DIR` | `.next`                 | Optional separate build directory for parallel local verification |
 
@@ -105,7 +105,7 @@ recovery, keyboard submission and mobile overflow. CI installs Chromium and runs
 For a supported browser already installed on an older Mac, set
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its absolute executable path.
 
-Local integration also ran the account flow against the actual Django API and disposable
+Local integration also ran the account flow against the actual FastAPI API and disposable
 PostgreSQL, using private test emails. To repeat it, configure an isolated backend on port 3137
 with `FRONTEND_ORIGIN=http://127.0.0.1:3130` and file email output, then run:
 
@@ -120,7 +120,7 @@ delivery or public deployment.
 ## Session flow
 
 The browser requests `/api/auth/csrf` before each account mutation. Next forwards only allowlisted
-JSON endpoints, session/CSRF cookies and the CSRF header to Django. Unsafe requests require the
+JSON endpoints, session/CSRF cookies and the CSRF header to FastAPI. Unsafe requests require the
 exact `APP_ORIGIN`; redirects, oversized bodies and upstream failures are rejected or sanitized.
 Response cookies are scoped to the frontend, with HttpOnly sessions and Secure cookies on HTTPS.
 Identity and CSRF reads have a five-second upstream timeout. Account mutations allow fifteen
@@ -128,12 +128,12 @@ seconds for password hashing and database writes; the browser waits twenty secon
 Timed-out writes are never replayed automatically. Signup/reset timeout messages explain that
 the request may have completed and ask the user to check their email before retrying.
 
-Protected pages read identity from Django on the server. Session loss redirects to sign in with
+Protected pages read identity from FastAPI on the server. Session loss redirects to sign in with
 a safe workspace destination; temporary API failures show a retry screen. The client rechecks
 identity when the tab regains focus. Email tokens require explicit submission, use no-referrer
 headers, and are removed from the visible address bar after the page loads.
 A short-lived cookie remembers only an allowlisted workspace destination through signup and
-confirmation. It contains no credential, is never forwarded to Django, and is cleared after
+confirmation. It contains no credential, is never forwarded to FastAPI, and is cleared after
 successful login or logout.
 
 ## Courses
@@ -141,33 +141,33 @@ successful login or logout.
 `/courses` provides creation, rename, archive confirmation, and active/archived views with
 20 courses per page. Archiving keeps the course; restoring and deleting are not implemented.
 Thin `/api/courses` routes reuse the verified JSON transport and forward only fixed paths,
-supported query parameters, session cookies and CSRF headers. Django owns validation,
+supported query parameters, session cookies and CSRF headers. FastAPI owns validation,
 ownership and transactions. The frontend checks response shapes before displaying them.
 Reads and writes are uncached. Timed-out writes are not replayed; refresh the list before retrying.
 Failed saves preserve entered titles, and list failures provide a retry action.
 
 Browser tests cover persistence after reload, rename failure/retry, archive cancellation,
 mobile layout, list outage/retry and two-user isolation. They can also run against the actual
-Django API with the isolated database and email setup described above.
+FastAPI API with the isolated database and email setup described above.
 
 ## Recordings
 
 `/recordings` uploads audio into an active course, lists saved lectures and plays them through
 private session-checked routes. There is no duration cap. Browser hashing and transfer use
 4 MiB slices so long files are never loaded completely into memory. Uploads can be paused,
-cancelled or resumed after reselecting the original file. Confirmed offsets live in Django;
+cancelled or resumed after reselecting the original file. Confirmed offsets live in FastAPI;
 a lost response is reconciled before the next chunk is sent.
 
 Audio stays on the backend's private persistent volume. Native playback supports byte ranges
 for seeking and requires the current user's session. The Next server streams audio rather
-than buffering it. Django validates checksums and actual audio format before saving metadata.
+than buffering it. FastAPI validates checksums and actual audio format before saving metadata.
 
 Browser coverage includes a three-hour recording, interrupted upload/reload/resume, wrong-file
 rejection, invalid media, cancellation/restart, native seeking and account isolation. These
-flows also run against actual Django and disposable PostgreSQL. See the backend's
+flows also run against actual FastAPI and disposable PostgreSQL. See the backend's
 [storage requirements](https://github.com/Xushnudbek76/archy-api/blob/master/docs/recordings.md).
 
-Before public launch, configure trusted client-IP handling and edge rate limits: Django currently
+Before public launch, configure trusted client-IP handling and edge rate limits: FastAPI currently
 sees the Next server's IP, so its authentication quotas are shared behind this transport. Do not
 forward arbitrary browser IP headers. Also configure delivery, HTTPS and log redaction for email
 link query strings. These are deployment work, separate from the implemented local account flow.

@@ -10,6 +10,10 @@ const errorMessages = {
   upload_conflict: 'Refresh the upload status before continuing.',
   invalid_chunk: 'The audio chunk could not be accepted.',
   storage_full: 'There is not enough server storage for this file.',
+  audio_too_long:
+    'This audio exceeds its upload duration limit. Choose a shorter file and start a new upload.',
+  duration_unavailable:
+    'The audio duration could not be verified. Export it again and start a new upload.',
 };
 function invalidQuery() {
   return Response.json(
@@ -45,7 +49,9 @@ export function forwardUploadRequest(
       }
     | undefined;
   const query = new URL(request.url).search;
-  if (!parts.length)
+  if (parts.length === 1 && parts[0] === 'policy')
+    route = { path: '/v1/uploads/policy', method: 'GET', errorMessages };
+  else if (!parts.length)
     route = {
       path: `/v1/uploads${query}`,
       method: request.method === 'POST' ? 'POST' : 'GET',

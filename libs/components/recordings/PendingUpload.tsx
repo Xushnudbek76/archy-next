@@ -24,6 +24,11 @@ export function PendingUpload({
         {upload.courseTitle} · {fileSize(upload.uploadedBytes)} of{' '}
         {fileSize(upload.sizeBytes)} saved
       </p>
+      <p className="course-caption">
+        {upload.maxDurationSeconds === null
+          ? 'Existing upload: no duration limit.'
+          : `Upload limit: ${upload.maxDurationSeconds / 60} minutes.`}
+      </p>
       <form
         onSubmit={async (event) => {
           event.preventDefault();

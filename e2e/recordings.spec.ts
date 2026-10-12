@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { signInTestUser } from './helpers';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 function wav(seconds = 1, rate = 8000) {
   const size = seconds * rate;
@@ -21,7 +23,60 @@ function wav(seconds = 1, rate = 8000) {
   return bytes;
 }
 
-test('hours-long audio resumes after a lost response, persists, seeks and stays private', async ({
+test('new audio limits reject long files and allow a fresh browser recording', async ({
+  page,
+  context,
+}) => {
+  test.skip(
+    !process.env.REAL_API,
+    'Duration policy uses the real probe and database',
+  );
+  const post = await signInTestUser(
+    context,
+    `duration-${Date.now()}@example.com`,
+  );
+  expect((await post('/api/courses', { title: 'Physics' })).status()).toBe(201);
+  await page.goto('/recordings');
+  await expect(
+    page.getByText('Up to 20 minutes for new uploads.', { exact: false }),
+  ).toBeVisible();
+  await page.getByLabel('Recording title', { exact: true }).fill('Too long');
+  await page.getByLabel('Audio file', { exact: true }).setInputFiles({
+    name: 'lecture.wav',
+    mimeType: 'audio/wav',
+    buffer: wav(1202, 1000),
+  });
+  await page.getByRole('button', { name: 'Upload audio', exact: true }).click();
+  await expect(page.getByRole('alert', { name: 'Upload error' })).toContainText(
+    'start a new upload',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Resume upload', exact: true }),
+  ).toHaveCount(0);
+  expect(
+    (await (await context.request.get('/api/uploads')).json()).items,
+  ).toHaveLength(0);
+  await page
+    .getByLabel('Recording title', { exact: true })
+    .fill('Browser recording');
+  const media = fileURLToPath(
+    new URL(
+      '../../archy-api/tests/fixtures/mediarecorder.webm',
+      import.meta.url,
+    ),
+  );
+  await page.getByLabel('Audio file', { exact: true }).setInputFiles(media);
+  await page.getByRole('button', { name: 'Upload audio', exact: true }).click();
+  await expect(
+    page.getByRole('article', { name: 'Browser recording', exact: true }),
+  ).toBeVisible();
+  const records = (await (await context.request.get('/api/recordings')).json())
+    .items;
+  expect(records).toHaveLength(1);
+  expect(records[0].durationSeconds).toBeGreaterThan(0.8);
+});
+
+test('legacy hours-long audio resumes after a lost response, persists, seeks and stays private', async ({
   page,
   context,
   browser,
@@ -61,10 +116,21 @@ test('hours-long audio resumes after a lost response, persists, seeks and stays 
     name: 'Pending Three-hour lecture',
     exact: true,
   });
+  if (process.env.REAL_API) {
+    const list = await (await context.request.get('/api/uploads')).json();
+    const backend = fileURLToPath(new URL('../../archy-api/', import.meta.url));
+    execFileSync(
+      `${backend}.venv-fastapi/bin/python`,
+      ['-m', 'tests.seed_legacy_upload', list.items[0].id],
+      { cwd: backend },
+    );
+  }
   await expect(pending).toContainText('4.0 MB');
   await page.unroute('**/api/uploads/*/chunks');
   await page.reload();
   await expect(pending).toBeVisible();
+  if (process.env.REAL_API)
+    await expect(pending).toContainText('Existing upload: no duration limit.');
   const wrong = Buffer.from(bytes);
   wrong[50] = 0;
   await writeFile(wrongFile, wrong);
@@ -98,6 +164,20 @@ test('hours-long audio resumes after a lost response, persists, seeks and stays 
   });
   expect(range.status()).toBe(206);
   expect(await range.body()).toEqual(bytes.subarray(44, 100));
+  for (const header of ['invalid', 'bytes=0-4,8-12']) {
+    const full = await context.request.get(audioPath, {
+      headers: { Range: header },
+    });
+    expect(full.status()).toBe(200);
+    expect(full.headers()['content-range']).toBeUndefined();
+    expect((await full.body()).equals(bytes)).toBe(true);
+  }
+  const head = await context.request.head(audioPath, {
+    headers: { Range: 'bytes=44-99' },
+  });
+  expect(head.status()).toBe(200);
+  expect(head.headers()['content-length']).toBe(String(bytes.length));
+  expect((await head.body()).length).toBe(0);
   await recording
     .locator('audio')
     .evaluate((audio: HTMLAudioElement) => audio.load());
@@ -147,6 +227,84 @@ test('hours-long audio resumes after a lost response, persists, seeks and stays 
     path: test.info().outputPath('recordings-mobile.png'),
     fullPage: true,
   });
+});
+
+test('temporary chunk overload retries without losing the recording', async ({
+  page,
+  context,
+}) => {
+  const post = await signInTestUser(context, `retry-${Date.now()}@example.com`);
+  await post('/api/courses', { title: 'Physics' });
+  await page.goto('/recordings');
+  await page
+    .getByLabel('Recording title', { exact: true })
+    .fill('Retry lecture');
+  await page.getByLabel('Audio file', { exact: true }).setInputFiles({
+    name: 'lecture.wav',
+    mimeType: 'audio/wav',
+    buffer: wav(),
+  });
+  let attempts = 0;
+  await page.route('**/api/uploads/*/chunks', async (route) => {
+    if (++attempts <= 2)
+      return route.fulfill({
+        status: 429,
+        headers: { 'Retry-After': '2', 'Content-Type': 'application/json' },
+        body: '{"code":"rate_limited","message":"Busy"}',
+      });
+    return route.continue();
+  });
+  await page.getByRole('button', { name: 'Upload audio', exact: true }).click();
+  await expect(
+    page.getByRole('article', { name: 'Retry lecture', exact: true }),
+  ).toBeVisible({ timeout: 20000 });
+  expect(attempts).toBe(3);
+});
+
+test('a slow progressing upload survives the former total deadlines', async ({
+  page,
+  context,
+}) => {
+  test.skip(
+    !process.env.REAL_API,
+    'Slow transport proof uses the actual backend.',
+  );
+  test.setTimeout(300000);
+  const post = await signInTestUser(context, `slow-${Date.now()}@example.com`);
+  await post('/api/courses', { title: 'Physics' });
+  await page.goto('/recordings');
+  await page
+    .getByLabel('Recording title', { exact: true })
+    .fill('Slow lecture');
+  await page.getByLabel('Audio file', { exact: true }).setInputFiles({
+    name: 'lecture.wav',
+    mimeType: 'audio/wav',
+    buffer: wav(600),
+  });
+  const network = await context.newCDPSession(page);
+  await network.send('Network.enable');
+  await network.send('Network.emulateNetworkConditions', {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: 24000,
+  });
+  try {
+    await page
+      .getByRole('button', { name: 'Upload audio', exact: true })
+      .click();
+    await expect(
+      page.getByRole('article', { name: 'Slow lecture', exact: true }),
+    ).toBeVisible({ timeout: 260000 });
+  } finally {
+    await network.send('Network.emulateNetworkConditions', {
+      offline: false,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1,
+    });
+    await network.detach();
+  }
 });
 
 test('invalid audio is rejected and paused uploads can be discarded', async ({

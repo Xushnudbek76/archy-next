@@ -34,7 +34,7 @@ export function recordingsFixture(
     return true;
   }
   if (
-    request.method !== 'GET' &&
+    !['GET', 'HEAD'].includes(request.method) &&
     (request.headers.origin !== 'http://127.0.0.1:3130' ||
       !request.headers.cookie?.includes(`csrftoken=${csrf}`) ||
       request.headers['x-csrftoken'] !== csrf)
@@ -43,6 +43,14 @@ export function recordingsFixture(
     return true;
   }
   const owner = user.profile.id;
+  if (
+    parts[2] === 'uploads' &&
+    parts[3] === 'policy' &&
+    request.method === 'GET'
+  ) {
+    reply(200, { maxDurationSeconds: 1200 });
+    return true;
+  }
   const page = Number(url.searchParams.get('page') ?? 1);
   const list = (items) =>
     reply(200, {
@@ -65,7 +73,10 @@ export function recordingsFixture(
       fail(404);
       return true;
     }
-    const range = request.headers.range?.match(/^bytes=(\d+)-(\d*)$/);
+    const range =
+      request.method === 'GET'
+        ? request.headers.range?.match(/^bytes=(\d+)-(\d*)$/)
+        : null;
     const start = range ? Number(range[1]) : 0;
     const end = range?.[2]
       ? Math.min(Number(range[2]), recording.data.length - 1)
@@ -109,6 +120,7 @@ export function recordingsFixture(
       status: 'UPLOADING',
       errorCode: '',
       chunkBytes: 4 * 1024 * 1024,
+      maxDurationSeconds: 1200,
       recording: null,
       createdAt: new Date().toISOString(),
       owner,

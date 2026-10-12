@@ -6,6 +6,7 @@ import {
   cancelUpload,
   createUpload,
   hashFile,
+  isTerminalUploadError,
   recordingError,
   transferUpload,
 } from '@/api/recordings-client';
@@ -102,11 +103,7 @@ export function useUpload(onChange: () => void) {
       fileRef.current = null;
       return true;
     } catch (cause) {
-      const terminal =
-        cause instanceof ApiError &&
-        ['invalid_audio', 'checksum_mismatch', 'upload_closed'].includes(
-          cause.code,
-        );
+      const terminal = isTerminalUploadError(cause);
       setPhase(terminal ? 'idle' : 'paused');
       if (terminal) {
         setCurrent(null);

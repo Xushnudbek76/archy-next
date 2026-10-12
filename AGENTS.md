@@ -2,12 +2,12 @@
 
 Archy is a real lecture workspace product. Keep the product name Archy.
 
-- This is the independent Next.js frontend. The Django backend is `../archy-api`; each root owns its dependencies, lockfile and commands.
+- This is the independent Next.js frontend. The FastAPI backend is `../archy-api`; each root owns its dependencies, lockfile and commands.
 - Follow Insu/Nestar conventions: thin routes under `app`, UI under `libs/components`, frontend hooks/types/enums under `libs`, and HTTP transport under `api`.
 - Preserve the original Archy_V2, Insu and Nestar projects.
-- Keep Next.js responsible for presentation and session transport. Keep domain rules in Django feature apps.
+- Keep Next.js responsible for presentation and session transport. Keep domain rules in FastAPI feature components.
 - Keep account routes thin, feature components in `libs/components/account`, authentication helpers in `libs/auth`, and shared hooks in `libs/hooks`.
-- Use same-origin HttpOnly Django sessions and CSRF protection. Never store authentication tokens in browser storage.
+- Use same-origin HttpOnly opaque sessions and CSRF protection. Never store authentication tokens in browser storage.
 - Check current identity on every protected page; layouts alone can persist across navigation. Keep identity checks uncached and distinguish API outages from signed-out sessions.
 - Never import backend source, database clients or worker dependencies into this project. Use public HTTP contracts.
 - Use strict TypeScript. Verify changes with the relevant checks in README.md.

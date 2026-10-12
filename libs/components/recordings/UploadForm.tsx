@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { listCourses } from '@/api/courses-client';
+import { readUploadPolicy } from '@/api/recordings-client';
 import type { CourseList } from '@/libs/types/courses';
 
 export function UploadForm({
@@ -17,9 +18,16 @@ export function UploadForm({
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
+  const [limit, setLimit] = useState<number | null>(null);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     let cancelled = false;
+    readUploadPolicy().then(
+      (value) => {
+        if (!cancelled) setLimit(value);
+      },
+      () => {},
+    );
     listCourses(false, page).then(
       (value) => {
         if (!cancelled) {
@@ -41,7 +49,10 @@ export function UploadForm({
     <div className="course-create recording-upload">
       <h2>Upload a lecture</h2>
       <p className="course-caption">
-        MP3, M4A, WAV, FLAC, Ogg or WebM. No duration limit.
+        MP3, M4A, WAV, FLAC, Ogg or WebM.{' '}
+        {limit === null
+          ? 'Duration is checked after upload.'
+          : `Up to ${limit / 60} minutes for new uploads.`}
       </p>
       {error ? (
         <div role="alert">

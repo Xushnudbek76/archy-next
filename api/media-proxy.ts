@@ -10,34 +10,55 @@ const headers = () =>
     'Cache-Control': 'private, no-store',
     'X-Content-Type-Options': 'nosniff',
   });
-function failure(status: number) {
+function failure(status: number, retryAfter?: string) {
+  const responseHeaders = headers();
+  if (retryAfter && /^\d{1,6}$/.test(retryAfter))
+    responseHeaders.set('Retry-After', retryAfter);
   return Response.json(
     {
       code:
-        status === 409
-          ? 'upload_conflict'
-          : status === 413
-            ? 'invalid_chunk'
-            : 'unavailable',
+        status === 429
+          ? 'rate_limited'
+          : status === 409
+            ? 'upload_conflict'
+            : status === 413
+              ? 'invalid_chunk'
+              : 'unavailable',
       message: 'The recording request could not be completed.',
     },
-    { status, headers: headers() },
+    { status, headers: responseHeaders },
   );
 }
 async function boundedBody(request: Request) {
+  const declared = request.headers.get('Content-Length');
+  if (declared !== null) {
+    if (!/^\d{1,16}$/.test(declared)) throw 400;
+    if (Number(declared) > 4194304) throw 413;
+  }
+  request.signal.throwIfAborted();
   const reader = request.body?.getReader();
   if (!reader) throw 400;
   const chunks: Uint8Array[] = [];
   let size = 0;
   let expired = false;
-  const timer = setTimeout(() => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expire = () => {
     expired = true;
     void reader.cancel();
-  }, 120000);
+  };
+  const abort = () => void reader.cancel();
+  const reset = () => {
+    clearTimeout(timer);
+    timer = setTimeout(expire, 15000);
+  };
+  request.signal.addEventListener('abort', abort, { once: true });
+  reset();
   try {
     while (true) {
       const { done, value } = await reader.read();
+      request.signal.throwIfAborted();
       if (done) break;
+      if (value.byteLength) reset();
       size += value.byteLength;
       if (size > 4 * 1024 * 1024) {
         await reader.cancel();
@@ -50,6 +71,7 @@ async function boundedBody(request: Request) {
     return Buffer.concat(chunks);
   } finally {
     clearTimeout(timer);
+    request.signal.removeEventListener('abort', abort);
     reader.releaseLock();
   }
 }
@@ -89,9 +111,12 @@ export async function forwardChunk(
     );
     if (!upstream.ok)
       return failure(
-        [400, 403, 404, 409, 413, 415].includes(upstream.status)
+        [400, 403, 404, 408, 409, 413, 415, 429].includes(upstream.status)
           ? upstream.status
           : 503,
+        upstream.status === 429
+          ? (upstream.headers.get('Retry-After') ?? undefined)
+          : undefined,
       );
     return Response.json(await upstream.json(), {
       status: 200,
@@ -115,9 +140,7 @@ export async function forwardAudio(
       Cookie: sessionCookies(request.headers.get('Cookie')),
     });
     const range = request.headers.get('Range');
-    if (range) {
-      if (range.length > 100 || !/^bytes=\d*-\d*$/.test(range))
-        return failure(400);
+    if (range && range.length <= 100 && request.method === 'GET') {
       outgoing.set('Range', range);
     }
     const upstream = await fetch(

@@ -1,5 +1,6 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { ApiError, jsonRequest } from './json-client.ts';
+import { UploadRateLimitError, waitForChunkRetry } from './upload-retry.ts';
 import {
   isPage,
   isRecording,
@@ -21,6 +22,19 @@ export async function listRecordings(page = 1) {
 export async function listUploads(page = 1) {
   const value = await jsonRequest(`/api/uploads?page=${page}`);
   return isPage(value, isUpload) ? value : invalid();
+}
+export async function readUploadPolicy(): Promise<number> {
+  const value = await jsonRequest('/api/uploads/policy');
+  if (
+    value &&
+    typeof value === 'object' &&
+    'maxDurationSeconds' in value &&
+    typeof value.maxDurationSeconds === 'number' &&
+    Number.isSafeInteger(value.maxDurationSeconds) &&
+    value.maxDurationSeconds > 0
+  )
+    return value.maxDurationSeconds;
+  return invalid();
 }
 export async function readUpload(id: string) {
   const value = await jsonRequest(`/api/uploads/${id}`);
@@ -91,13 +105,19 @@ async function sendChunk(
     const abort = () => xhr.abort();
     const finish = () => signal.removeEventListener('abort', abort);
     xhr.open('PATCH', `/api/uploads/${id}/chunks`);
-    xhr.timeout = 150000;
+    xhr.timeout = 0;
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
     xhr.setRequestHeader('X-CSRFToken', csrfToken);
     xhr.setRequestHeader('Upload-Offset', String(offset));
     xhr.upload.onprogress = (event) => progress(offset + event.loaded);
     xhr.onload = () => {
       finish();
+      if (xhr.status === 429) {
+        const retry = xhr.getResponseHeader('Retry-After') ?? '';
+        return reject(
+          new UploadRateLimitError(/^\d{1,6}$/.test(retry) ? Number(retry) : 2),
+        );
+      }
       let value: unknown;
       try {
         value = JSON.parse(xhr.responseText);
@@ -178,7 +198,22 @@ export async function transferUpload(
     signal.throwIfAborted();
     const offset = current.uploadedBytes;
     const part = file.slice(offset, offset + current.chunkBytes);
-    current = await transport.chunk(current.id, offset, part, signal, progress);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        current = await transport.chunk(
+          current.id,
+          offset,
+          part,
+          signal,
+          progress,
+        );
+        break;
+      } catch (error) {
+        if (!(error instanceof UploadRateLimitError) || attempt >= 3)
+          throw error;
+        await waitForChunkRetry(attempt, error.retryAfterSeconds, signal);
+      }
+    }
     if (current.uploadedBytes !== offset + part.size)
       throw new ApiError(
         409,
@@ -194,10 +229,16 @@ export async function transferUpload(
 export function recordingError(error: unknown): string {
   if (!(error instanceof ApiError))
     return 'Upload interrupted. Resume when you are ready.';
+  if (error instanceof UploadRateLimitError)
+    return 'The server is busy. Your progress is saved; resume in a moment.';
   if ([401, 403].includes(error.status))
     return 'Your session expired. Sign in again to continue.';
   if (error.code === 'invalid_audio')
     return 'Use a valid MP3, M4A, WAV, FLAC, Ogg or WebM audio file.';
+  if (error.code === 'audio_too_long')
+    return 'This audio exceeds its upload duration limit. Choose a shorter file and start a new upload.';
+  if (error.code === 'duration_unavailable')
+    return 'The audio duration could not be verified. Export it again and start a new upload.';
   if (error.code === 'checksum_mismatch')
     return 'The file changed during upload. Select it and start a new upload.';
   if (error.code === 'upload_closed')
@@ -210,4 +251,16 @@ export function recordingError(error: unknown): string {
     return 'This upload or course is no longer available. Refresh the page.';
   if (error.status === 400) return 'Check the title, course and audio file.';
   return 'Upload interrupted. Your saved progress is kept; resume when you are ready.';
+}
+export function isTerminalUploadError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    [
+      'invalid_audio',
+      'checksum_mismatch',
+      'upload_closed',
+      'audio_too_long',
+      'duration_unavailable',
+    ].includes(error.code)
+  );
 }

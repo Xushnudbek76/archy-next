@@ -1,5 +1,5 @@
 import type { APIRequestContext } from '@playwright/test';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export async function emailLink(
@@ -14,9 +14,16 @@ export async function emailLink(
         )
       ).json()
     ).link;
-  const files = (await readdir(process.env.AUTH_EMAIL_DIR)).sort().reverse();
-  for (const file of files) {
-    const raw = await readFile(join(process.env.AUTH_EMAIL_DIR, file), 'utf8');
+  const directory = process.env.AUTH_EMAIL_DIR;
+  const files = await Promise.all(
+    (await readdir(directory)).map(async (file) => ({
+      file,
+      modified: (await stat(join(directory, file))).mtimeMs,
+    })),
+  );
+  files.sort((a, b) => b.modified - a.modified);
+  for (const { file } of files) {
+    const raw = await readFile(join(directory, file), 'utf8');
     if (!raw.includes(`To: ${email}`)) continue;
     const decoded = raw
       .replace(/=\r?\n/g, '')

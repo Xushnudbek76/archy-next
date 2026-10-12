@@ -20,6 +20,7 @@ export type Upload = {
   status: 'UPLOADING' | 'ACCEPTED' | 'FAILED' | 'CANCELLED';
   errorCode: string;
   chunkBytes: number;
+  maxDurationSeconds: number | null;
   recording: Recording | null;
   createdAt: string;
 };
@@ -65,6 +66,8 @@ export function isUpload(value: unknown): value is Upload {
     integer(u.chunkBytes) &&
     u.chunkBytes > 0 &&
     u.chunkBytes <= 4 * 1024 * 1024 &&
+    (u.maxDurationSeconds === null ||
+      (integer(u.maxDurationSeconds) && u.maxDurationSeconds > 0)) &&
     typeof u.sha256 === 'string' &&
     /^[a-f0-9]{64}$/.test(u.sha256) &&
     ['UPLOADING', 'ACCEPTED', 'FAILED', 'CANCELLED'].includes(u.status) &&
