@@ -1,33 +1,21 @@
 import Link from 'next/link';
+import { Brand } from '@/libs/components/common/Brand';
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="account-layout">
-      <section className="account-story" aria-label="About Archy">
-        <Link
-          className="account-brand"
-          href="/login"
-          aria-label="Archy sign in"
-        >
-          archy.
+      <header className="account-heading">
+        <Link href="/en" aria-label="Archy home">
+          <Brand />
         </Link>
-        <div>
-          <p className="account-eyebrow">A SPACE FOR YOUR LEARNING</p>
-          <h2>
-            Keep the lecture.
-            <br />
-            Find the clarity.
-          </h2>
-          <p>
-            Your courses, recordings, and ideas. Together in one calm workspace.
-          </p>
-        </div>
-        <span className="account-story-footer">One lecture at a time.</span>
-      </section>
+        <Link href="/en" className="account-back">
+          Back to Archy
+        </Link>
+      </header>
       <section className="account-content" aria-label="Your account">
         <div className="account-card">{children}</div>
         <footer className="account-footer">
-          Made for your learning. <span>Archy</span>
+          Your materials. Your space to learn.
         </footer>
       </section>
     </main>

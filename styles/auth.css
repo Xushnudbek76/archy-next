@@ -324,3 +324,132 @@ fieldset:disabled .account-button {
     padding: 20px;
   }
 }
+
+.account-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(ellipse at top, #eaf5e9, #fafcf9 55%);
+  padding: 0 24px 40px;
+}
+.account-heading {
+  width: 100%;
+  max-width: 1100px;
+  padding: 30px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.account-back {
+  color: var(--muted);
+  font-size: 13px;
+}
+.account-content {
+  width: 100%;
+  max-width: 480px;
+  margin: auto;
+  padding: 0;
+  background: transparent;
+}
+.account-card {
+  max-width: none;
+  padding: 36px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+.account-card h1,
+.session-retry h1,
+.profile-card h1 {
+  font: 650 32px/1.25 var(--font-sans);
+  letter-spacing: -1px;
+}
+.account-tabs {
+  margin-bottom: 26px;
+}
+.account-tabs a {
+  font-size: 14px;
+}
+.account-field {
+  margin-bottom: 22px;
+}
+.account-field input {
+  min-height: 48px;
+  border-radius: 10px;
+}
+.account-button {
+  min-height: 48px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.account-footer {
+  padding-block: 24px 0;
+  text-align: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.profile-card {
+  max-width: 750px;
+  margin: 36px auto;
+  padding: 32px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-block: 30px;
+}
+.profile-identity p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.profile-avatar {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eaf3e9;
+  color: var(--accent);
+  font-size: 24px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.profile-security {
+  border-top: 1px solid var(--line);
+  margin-top: 28px;
+  padding-top: 22px;
+}
+.profile-security h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.profile-security .secondary-button {
+  margin: 8px 12px 0 0;
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .account-layout {
+    padding: 0 20px 24px;
+  }
+  .account-heading {
+    padding: 24px 0 36px;
+  }
+  .account-content {
+    margin-top: 10px;
+  }
+  .account-card {
+    padding: 28px 22px;
+  }
+  .account-card h1 {
+    font-size: 29px;
+  }
+  .profile-card {
+    margin: 20px;
+    padding: 24px 20px;
+  }
+}
