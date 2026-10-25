@@ -84,19 +84,21 @@ export class BrowserRecordingSave {
       signal,
     );
     signal.throwIfAborted();
-    report('uploading', this.upload.uploadedBytes);
-    this.upload = await this.transport.transfer(
-      this.file,
-      this.upload,
-      signal,
-      (bytes, current) =>
-        report(
-          current?.uploadedBytes === current?.sizeBytes && current
-            ? 'verifying'
-            : 'uploading',
-          bytes,
-        ),
-    );
+    if (this.upload.status !== 'ACCEPTED') {
+      report('uploading', this.upload.uploadedBytes);
+      this.upload = await this.transport.transfer(
+        this.file,
+        this.upload,
+        signal,
+        (bytes, current) =>
+          report(
+            current?.uploadedBytes === current?.sizeBytes && current
+              ? 'verifying'
+              : 'uploading',
+            bytes,
+          ),
+      );
+    }
     if (this.upload.status !== 'ACCEPTED' || !this.upload.recording)
       throw new Error(
         'The recording has not been validated yet. Please retry saving.',

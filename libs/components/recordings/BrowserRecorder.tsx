@@ -1,6 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import {
+  installRecordingLeaveGuard,
+  recordingLeaveEnvironment,
+} from './recording-leave-guard';
 import { ApiError } from '@/api/json-client';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -25,6 +29,7 @@ export function BrowserRecorder({
   courseId: string | null;
   onSaved: () => void;
 }) {
+  const mounted = useRef(false);
   const session = useRef<BrowserRecordingSession | null>(null);
   const [capture, setCapture] = useState<CaptureSnapshot>({
     phase: 'idle',
@@ -46,12 +51,14 @@ export function BrowserRecorder({
     useState<RecordingSaveProgress | null>(null);
 
   useEffect(() => {
+    mounted.current = true;
     const current = new BrowserRecordingSession(
       browserCaptureEnvironment(),
       setCapture,
     );
     session.current = current;
     return () => {
+      mounted.current = false;
       controller.current?.abort();
       current.dispose();
       session.current = null;
@@ -97,13 +104,15 @@ export function BrowserRecorder({
         title,
       );
       setMetadataLocked(true);
-      await saver.current.save(abort.signal, setSaveProgress);
-      if (!abort.signal.aborted) {
+      await saver.current.save(abort.signal, (progress) => {
+        if (mounted.current && !abort.signal.aborted) setSaveProgress(progress);
+      });
+      if (mounted.current && !abort.signal.aborted) {
         setSaved(true);
         onSaved();
       }
     } catch (cause) {
-      if (!abort.signal.aborted)
+      if (mounted.current && !abort.signal.aborted)
         setSaveError(
           cause instanceof Error && !(cause instanceof ApiError)
             ? cause.message
@@ -111,11 +120,49 @@ export function BrowserRecorder({
         );
     } finally {
       controller.current = null;
-      setSaving(false);
+      if (mounted.current) setSaving(false);
     }
   }
 
   const active = capture.phase === 'recording' || capture.phase === 'paused';
+  const dirty =
+    active ||
+    capture.phase === 'starting' ||
+    capture.phase === 'stopping' ||
+    (!!capture.blob && !saved);
+  useEffect(() => {
+    if (!dirty) return;
+    return installRecordingLeaveGuard(recordingLeaveEnvironment());
+  }, [dirty]);
+
+  function discard() {
+    if (
+      dirty &&
+      !window.confirm('Discard this recording? Unsaved audio will be lost.')
+    )
+      return false;
+    session.current?.discard();
+    saver.current = null;
+    setSaved(false);
+    setMetadataLocked(false);
+    setSaveError('');
+    setSaveProgress(null);
+    return true;
+  }
+
+  function start() {
+    if (!policy || !discard()) return;
+    void session.current?.start(policy);
+  }
+
+  function download() {
+    const url = preview.current?.src;
+    if (!url || !capture.blob) return;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = recordedAudioFile(capture.blob).name;
+    link.click();
+  }
   return (
     <section className="browser-recorder" aria-label="Record audio">
       <h3>Record audio</h3>
@@ -163,15 +210,7 @@ export function BrowserRecorder({
           <button
             className="course-button"
             disabled={!policy || !courseId || saving}
-            onClick={() => {
-              if (!policy) return;
-              saver.current = null;
-              setSaved(false);
-              setMetadataLocked(false);
-              setSaveError('');
-              setSaveProgress(null);
-              void session.current?.start(policy);
-            }}
+            onClick={start}
           >
             {capture.phase === 'stopped' ? 'Record again' : 'Start recording'}
           </button>
@@ -200,6 +239,11 @@ export function BrowserRecorder({
             Stop recording
           </button>
         ) : null}
+        {(dirty || capture.blob) && !saving ? (
+          <button className="course-button" onClick={() => discard()}>
+            Discard recording
+          </button>
+        ) : null}
       </div>
       {capture.blob ? (
         <audio
@@ -212,7 +256,8 @@ export function BrowserRecorder({
       {capture.blob ? (
         <div>
           <p className="course-caption">
-            Your audio stays in this browser until it is saved.
+            Keep this page open until your audio is saved. You can download a
+            copy before leaving.
           </p>
           <label>
             Recording title
@@ -236,6 +281,22 @@ export function BrowserRecorder({
                   ? 'Retry saving recording'
                   : 'Save to document'}
           </button>
+          <button className="course-button" onClick={download}>
+            Download audio
+          </button>
+          {saving && saveProgress?.phase !== 'attaching' ? (
+            <button
+              className="course-button"
+              onClick={() => {
+                controller.current?.abort();
+                setSaveError(
+                  'Saving paused. Retry to continue from saved upload progress.',
+                );
+              }}
+            >
+              Pause saving
+            </button>
+          ) : null}
           {saveProgress && !saved ? (
             <div role="status">
               <p>

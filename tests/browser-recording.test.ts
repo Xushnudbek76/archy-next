@@ -11,10 +11,15 @@ import {
 function fixture() {
   let now = 0;
   let stoppedTracks = 0;
+  let ended: (() => void) | null = null;
   const track = {
     stop: () => stoppedTracks++,
-    addEventListener: () => {},
-    removeEventListener: () => {},
+    addEventListener: (_event: string, callback: () => void) => {
+      ended = callback;
+    },
+    removeEventListener: () => {
+      ended = null;
+    },
   };
   const stream = { getTracks: () => [track] } as unknown as MediaStream;
   const recorder: Recorder = {
@@ -57,6 +62,7 @@ function fixture() {
       now = value;
     },
     stoppedTracks: () => stoppedTracks,
+    endTrack: () => ended?.(),
   };
 }
 
@@ -139,5 +145,55 @@ test('memory guard stops capture while retaining the audio already captured', as
   assert.match(f.session.snapshot.error ?? '', /memory/);
   assert.equal(await f.session.snapshot.blob?.text(), 'first');
   assert.equal(f.stoppedTracks(), 1);
+  f.session.dispose();
+});
+
+test('discard cancels a pending permission request and permits a fresh recording', async () => {
+  const f = fixture();
+  let release: ((stream: MediaStream) => void) | undefined;
+  let lateTracksStopped = 0;
+  f.environment.getStream = () =>
+    new Promise((resolve) => {
+      release = resolve;
+    });
+  const pending = f.session.start(1200);
+  f.session.discard();
+  release?.({
+    getTracks: () => [
+      {
+        stop: () => {
+          lateTracksStopped++;
+        },
+      },
+    ],
+  } as unknown as MediaStream);
+  await pending;
+  assert.equal(lateTracksStopped, 1);
+  assert.equal(f.session.snapshot.phase, 'idle');
+  f.session.dispose();
+});
+
+test('revoked microphone stops capture and preserves flushed audio', async () => {
+  const f = fixture();
+  await f.session.start(1200);
+  f.recorder.ondataavailable?.({ data: new Blob(['prefix']) });
+  f.endTrack();
+  assert.equal(f.session.snapshot.phase, 'stopped');
+  assert.match(f.session.snapshot.error ?? '', /interrupted/);
+  assert.equal(await f.session.snapshot.blob?.text(), 'prefixaudio');
+  assert.equal(f.stoppedTracks(), 1);
+  f.session.dispose();
+});
+
+test('recorder error waits for the final data event before constructing the Blob', async () => {
+  const f = fixture();
+  await f.session.start(1200);
+  f.recorder.ondataavailable?.({ data: new Blob(['prefix']) });
+  f.recorder.state = 'inactive';
+  f.recorder.onerror?.();
+  assert.equal(f.session.snapshot.phase, 'stopping');
+  f.recorder.ondataavailable?.({ data: new Blob(['final']) });
+  f.recorder.onstop?.();
+  assert.equal(await f.session.snapshot.blob?.text(), 'prefixfinal');
   f.session.dispose();
 });

@@ -138,3 +138,99 @@ test('missing course and oversized recording titles are rejected before admissio
     /title/,
   );
 });
+
+test('lost admission responses retry the same identity and immutable audio', async () => {
+  const admissions: string[] = [];
+  let hashCalls = 0;
+  const save = new BrowserRecordingSave(
+    new File(['audio'], 'lecture.webm'),
+    id,
+    id,
+    'Lecture',
+    {
+      hash: async () => {
+        hashCalls++;
+        return 'a'.repeat(64);
+      },
+      create: async (data) => {
+        admissions.push(data.id);
+        if (admissions.length === 1) throw new Error('lost response');
+        return upload;
+      },
+      transfer: async () => ({ ...upload, status: 'ACCEPTED', recording }),
+      attach: async () => {},
+    },
+  );
+  await assert.rejects(
+    save.save(new AbortController().signal, () => {}),
+    /lost response/,
+  );
+  await save.save(new AbortController().signal, () => {});
+  assert.equal(admissions.length, 2);
+  assert.equal(admissions[0], admissions[1]);
+  assert.equal(hashCalls, 1);
+});
+
+test('a failed document attach retries the saved recording without transferring audio again', async () => {
+  let transfers = 0;
+  let attaches = 0;
+  const save = new BrowserRecordingSave(
+    new File(['audio'], 'lecture.webm'),
+    id,
+    id,
+    'Lecture',
+    {
+      hash: async () => 'a'.repeat(64),
+      create: async () => upload,
+      transfer: async () => {
+        transfers++;
+        return { ...upload, status: 'ACCEPTED', recording };
+      },
+      attach: async () => {
+        if (++attaches === 1)
+          throw new Error('document temporarily unavailable');
+      },
+    },
+  );
+  await assert.rejects(save.save(new AbortController().signal, () => {}));
+  await save.save(new AbortController().signal, () => {});
+  assert.equal(transfers, 1);
+  assert.equal(attaches, 2);
+});
+
+test('aborting a transfer keeps the same Blob and upload for resume', async () => {
+  const abort = new AbortController();
+  let attempts = 0;
+  let admissions = 0;
+  let retainedFile: File | null = null;
+  const save = new BrowserRecordingSave(
+    new File(['audio'], 'lecture.webm'),
+    id,
+    id,
+    'Lecture',
+    {
+      hash: async () => 'a'.repeat(64),
+      create: async () => {
+        admissions++;
+        return upload;
+      },
+      transfer: async (file, _upload, signal) => {
+        if (++attempts === 1) {
+          retainedFile = file;
+          abort.abort();
+          signal.throwIfAborted();
+        }
+        assert.equal(file, retainedFile);
+        return { ...upload, status: 'ACCEPTED', recording };
+      },
+      attach: async () => {},
+    },
+  );
+  await assert.rejects(
+    save.save(abort.signal, () => {}),
+    { name: 'AbortError' },
+  );
+  await save.save(new AbortController().signal, () => {});
+  assert.equal(admissions, 1);
+  assert.equal(attempts, 2);
+});

@@ -231,7 +231,6 @@ export class BrowserRecordingSession {
     this.publish({ phase: 'stopping', elapsedMs: this.elapsed });
     this.clearTimer();
     if (this.recorder?.state !== 'inactive') this.recorder?.stop();
-    else this.recorder?.onstop?.();
   }
 
   private interrupted = () => {
@@ -255,8 +254,7 @@ export class BrowserRecordingSession {
     this.stream = null;
   }
 
-  dispose() {
-    this.disposed = true;
+  discard() {
     this.generation++;
     this.clearTimer();
     if (this.recorder) {
@@ -268,7 +266,14 @@ export class BrowserRecordingSession {
     }
     this.releaseStream();
     this.chunks = [];
-    this.snapshot = { phase: 'idle', elapsedMs: 0, blob: null, error: null };
+    this.recorder = null;
+    this.bytes = this.elapsed = 0;
+    this.publish({ phase: 'idle', elapsedMs: 0, blob: null, error: null });
+  }
+
+  dispose() {
+    this.disposed = true;
+    this.discard();
   }
 }
 
