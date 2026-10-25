@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Brand } from '@/libs/components/common/Brand';
 import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from '@/libs/components/common/Icon';
 import { useAuth } from '@/libs/hooks/useAuth';
@@ -23,10 +24,7 @@ export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       </a>
       <aside className="sidebar">
         <Link className="brand" href="/" aria-label="Archy home">
-          <span className="brand-mark">a</span>
-          <span>
-            archy<span className="brand-dot">.</span>
-          </span>
+          <Brand />
         </Link>
         <p className="nav-caption">YOUR WORKSPACE</p>
         <nav aria-label="Main navigation">
