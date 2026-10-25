@@ -270,3 +270,28 @@
     max-width: 100%;
   }
 }
+.pdf-upload {
+  display: grid;
+  gap: 16px;
+}
+.pdf-upload p {
+  margin: 0;
+  line-height: 1.7;
+}
+.pdf-upload input[type='file'] {
+  width: 100%;
+  min-width: 0;
+  padding: 18px;
+  border: 1px dashed #bacbbc;
+  border-radius: 10px;
+  background: #f8fbf7;
+  font-size: 14px;
+}
+.pdf-upload .primary-button {
+  justify-self: start;
+}
+.pdf-upload progress {
+  display: block;
+  width: 100%;
+  accent-color: var(--accent);
+}

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { documentError, getDocument } from '@/api/documents-client';
+import { UploadPdf } from './UploadPdf';
 import type { DocumentDetail } from '@/libs/types/documents';
 export function DocumentWorkspace({ id }: { id: string }) {
   const [document, setDocument] = useState<DocumentDetail | null>(null);
@@ -49,7 +50,13 @@ export function DocumentWorkspace({ id }: { id: string }) {
           </header>
           <section className="document-material surface">
             <h2>Lecture material</h2>
-            <p>Add a PDF or keep a lecture recording in this document.</p>
+            {document.hasPdf ? (
+              <p>
+                {document.fileName} · {document.pageCount} pages
+              </p>
+            ) : (
+              <UploadPdf id={id} onSaved={() => setRevision((n) => n + 1)} />
+            )}
             <Link href="/recordings" className="primary-button">
               Open recordings
             </Link>
