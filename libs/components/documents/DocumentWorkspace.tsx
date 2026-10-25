@@ -5,10 +5,7 @@ import { useRouter } from 'next/navigation';
 import { documentError, getDocument } from '@/api/documents-client';
 import { useDocumentFolders } from '@/libs/hooks/useDocumentFolders';
 import type { Document, DocumentDetail } from '@/libs/types/documents';
-import { LectureNotes } from '@/libs/components/recordings/LectureNotes';
-import { UploadPdf } from './UploadPdf';
-import { PdfMaterial } from './PdfMaterial';
-import { AttachRecording } from './AttachRecording';
+import { StudyWorkspace } from '@/libs/components/study/StudyWorkspace';
 import { ManageDocument } from './ManageDocument';
 
 export function DocumentWorkspace({ id }: { id: string }) {
@@ -77,48 +74,11 @@ export function DocumentWorkspace({ id }: { id: string }) {
               <button onClick={folders.retry}>Retry folders</button>
             </p>
           ) : null}
-          <div
-            className={`study-materials ${document.recordingId ? 'with-recording' : ''}`}
-          >
-            <div>
-              {document.hasPdf ? (
-                <PdfMaterial document={document} />
-              ) : (
-                <section className="document-material surface">
-                  <UploadPdf id={id} onSaved={() => refresh()} />
-                </section>
-              )}
-            </div>
-            <div className="study-recording-column">
-              {document.recordingId ? (
-                <section
-                  className="document-material surface"
-                  aria-label="Linked lecture recording"
-                >
-                  <h2>Lecture recording</h2>
-                  <audio
-                    controls
-                    preload="none"
-                    src={`/api/recordings/${document.recordingId}/audio`}
-                  >
-                    Your browser does not support audio playback.
-                  </audio>
-                  <LectureNotes
-                    key={document.recordingId}
-                    recordingId={document.recordingId}
-                  />
-                </section>
-              ) : null}
-              <section className="document-material surface">
-                <AttachRecording
-                  key={document.recordingId ?? 'none'}
-                  id={id}
-                  current={document.recordingId}
-                  onSaved={() => refresh()}
-                />
-              </section>
-            </div>
-          </div>
+          <StudyWorkspace
+            key={id}
+            document={document}
+            onSaved={() => refresh()}
+          />
         </>
       )}
     </div>

@@ -1,0 +1,102 @@
+.study-workspace {
+  display: grid;
+  gap: 1.25rem;
+}
+.study-audio {
+  padding: 1.25rem;
+}
+.study-audio h2 {
+  font-size: 1rem;
+  margin: 0 0 0.8rem;
+}
+.study-audio audio {
+  width: 100%;
+}
+.study-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.5rem;
+}
+.study-tabs button {
+  border: 0;
+  border-radius: 0.6rem;
+  padding: 0.8rem 1rem;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+.study-tabs button[aria-selected='true'] {
+  background: var(--green-soft, #e6f0e9);
+  color: var(--ink);
+  font-weight: 600;
+}
+.study-workspace [hidden] {
+  display: none;
+}
+.study-workspace [role='tabpanel'] {
+  min-width: 0;
+}
+.study-workspace [role='tabpanel'] > .document-material + .document-material {
+  margin-top: 1rem;
+}
+.study-workspace p,
+.study-workspace li {
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.study-workspace h3 {
+  margin-top: 1.5rem;
+}
+.source-link {
+  display: inline-block;
+  border: 1px solid var(--line);
+  background: var(--paper, white);
+  color: var(--green);
+  padding: 0.3rem 0.6rem;
+  margin: 0.2rem;
+  border-radius: 0.5rem;
+  font: inherit;
+  cursor: pointer;
+}
+.transcript-segment {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.8rem 0;
+}
+.transcript-segment p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.study-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.study-controls label {
+  display: grid;
+  gap: 0.35rem;
+}
+.study-controls select,
+.study-controls input {
+  font: inherit;
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--paper, white);
+  color: var(--ink);
+}
+.study-citation {
+  border-left: 3px solid var(--green);
+  background: var(--green-soft, #edf4ef);
+  padding: 1rem;
+  white-space: pre-wrap;
+  max-height: 24rem;
+  overflow: auto;
+}

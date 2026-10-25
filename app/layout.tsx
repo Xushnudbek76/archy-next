@@ -4,6 +4,8 @@ import '@/styles/auth.css';
 import '@/styles/courses.css';
 import '@/styles/theme.css';
 import '@/styles/workspace.css';
+import '@/styles/study.css';
+import '@/styles/browser-recording.css';
 
 export const metadata: Metadata = {
   title: { default: 'Archy — Your lecture workspace', template: '%s | Archy' },
