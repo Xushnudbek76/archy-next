@@ -1,13 +1,23 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createDocument, documentError } from '@/api/documents-client';
 import { useDocuments } from '@/libs/hooks/useDocuments';
 import { DocumentCard } from './DocumentCard';
+import { DocumentControls } from './DocumentControls';
+import { ManageDocument } from './ManageDocument';
+import { useDocumentFolders } from '@/libs/hooks/useDocumentFolders';
 import { Icon } from '@/libs/components/common/Icon';
 
 export function DocumentsWorkspace() {
   const documents = useDocuments();
+  const folders = useDocumentFolders();
+  const { setQuery } = documents;
+  const changeFilter = useCallback(
+    (filter: { q: string; courseId: string }) =>
+      setQuery({ page: 1, ...filter }),
+    [setQuery],
+  );
   const dialog = useRef<HTMLDialogElement>(null);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
@@ -47,6 +57,16 @@ export function DocumentsWorkspace() {
           together in your course folder.
         </p>
       </section>
+      <DocumentControls
+        folders={folders.folders}
+        query={documents.query}
+        onChange={changeFilter}
+      />
+      {folders.error ? (
+        <p role="alert">
+          {folders.error} <button onClick={folders.retry}>Retry folders</button>
+        </p>
+      ) : null}
       {documents.loading ? (
         <p role="status">Loading your documents…</p>
       ) : documents.error ? (
@@ -70,13 +90,22 @@ export function DocumentsWorkspace() {
               <span>Add a document</span>
             </button>
             {documents.data?.items.map((document) => (
-              <DocumentCard key={document.id} document={document} />
+              <div key={document.id}>
+                <DocumentCard document={document} />
+                <ManageDocument
+                  document={document}
+                  folders={folders.folders}
+                  disabled={!folders.ready}
+                  onSaved={documents.reload}
+                />
+              </div>
             ))}
           </div>
           {documents.data?.total === 0 ? (
             <p className="documents-empty">
-              Your next lecture starts here. Add a document or upload a
-              recording to get started.
+              {documents.query.q || documents.query.courseId
+                ? 'No documents match these filters. Try another search or course.'
+                : 'Your next lecture starts here. Add a document or upload a recording to get started.'}
             </p>
           ) : null}
           <div className="document-pagination">

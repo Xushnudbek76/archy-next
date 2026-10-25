@@ -52,3 +52,19 @@ export function documentError(error: unknown) {
   }
   return 'Unable to complete the document request. Please try again.';
 }
+
+export async function updateDocument(
+  id: string,
+  patch: {
+    title?: string;
+    courseId?: string | null;
+    recordingId?: string | null;
+  },
+) {
+  const value = await jsonRequest(`/api/documents/${id}`, patch, 'PATCH');
+  return isDocument(value) ? value : invalid();
+}
+export async function archiveDocument(id: string) {
+  const value = await jsonRequest(`/api/documents/${id}/archive`, {});
+  return isDocument(value) ? value : invalid();
+}
