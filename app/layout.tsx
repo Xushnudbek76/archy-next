@@ -5,6 +5,7 @@ import '@/styles/courses.css';
 import '@/styles/theme.css';
 import '@/styles/workspace.css';
 import '@/styles/study.css';
+import '@/styles/tutor.css';
 import '@/styles/browser-recording.css';
 
 export const metadata: Metadata = {

@@ -10,6 +10,7 @@ import { formatTime } from '@/libs/types/study';
 import { sourceLabel, type StudySource } from '@/libs/types/study';
 import { readSources, studyError } from '@/api/study-client';
 import { DocumentNotes } from './DocumentNotes';
+import { DocumentTutor } from '@/libs/components/tutor/DocumentTutor';
 import { seekTime, adjacentTab } from './playback';
 
 export function StudyWorkspace({
@@ -90,6 +91,7 @@ export function StudyWorkspace({
           ['material', 'Original material'],
           ['notes', 'Summary notes'],
           ['transcript', 'Transcript'],
+          ['tutor', 'AI tutor'],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -258,6 +260,15 @@ export function StudyWorkspace({
               : 'Link a lecture recording to view its transcript.'}
           </p>
         )}
+      </section>
+      <section
+        id="panel-tutor"
+        role="tabpanel"
+        aria-labelledby="tab-tutor"
+        hidden={panel !== 'tutor'}
+        className="document-material surface"
+      >
+        <DocumentTutor documentId={document.id} />
       </section>
       <details className="document-material surface">
         <summary>Record a lecture</summary>
