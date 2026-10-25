@@ -37,7 +37,7 @@ export async function studyNotes(
     studyPath(id, 'study-notes'),
     language ? { language } : undefined,
     'POST',
-    { signal, timeoutMs: 30000 },
+    { signal, timeoutMs: 50000 },
   );
   if (!isStudyNotes(value))
     throw new ApiError(503, 'invalid_response', 'Study notes are unavailable.');

@@ -189,7 +189,7 @@ export async function forwardJsonRequest(
             ? payload.code
             : '';
         const message = route.errorMessages[code];
-        if (message && [400, 409, 413, 507].includes(upstream.status))
+        if (message && [400, 409, 413, 502, 503, 507].includes(upstream.status))
           return Response.json(
             { code, message, requestId: id },
             { status: upstream.status, headers },

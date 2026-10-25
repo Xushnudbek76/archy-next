@@ -1,5 +1,11 @@
 import type { DocumentDetail } from '@/libs/types/documents';
-export function PdfMaterial({ document }: { document: DocumentDetail }) {
+export function PdfMaterial({
+  document,
+  page,
+}: {
+  document: DocumentDetail;
+  page?: number;
+}) {
   const source = `/api/documents/${document.id}/pdf`;
   return (
     <section className="document-material surface" aria-label="PDF material">
@@ -21,7 +27,7 @@ export function PdfMaterial({ document }: { document: DocumentDetail }) {
       </header>
       <iframe
         className="pdf-preview"
-        src={source}
+        src={page ? `${source}#page=${page}` : source}
         title={`PDF: ${document.title}`}
         referrerPolicy="no-referrer"
       />

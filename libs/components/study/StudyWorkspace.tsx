@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DocumentDetail } from '@/libs/types/documents';
 import { useProcessing } from '@/libs/hooks/useProcessing';
 import { PdfMaterial } from '@/libs/components/documents/PdfMaterial';
@@ -7,6 +7,9 @@ import { UploadPdf } from '@/libs/components/documents/UploadPdf';
 import { AttachRecording } from '@/libs/components/documents/AttachRecording';
 import { BrowserRecorder } from '@/libs/components/recordings/BrowserRecorder';
 import { formatTime } from '@/libs/types/study';
+import { sourceLabel, type StudySource } from '@/libs/types/study';
+import { readSources, studyError } from '@/api/study-client';
+import { DocumentNotes } from './DocumentNotes';
 import { seekTime, adjacentTab } from './playback';
 
 export function StudyWorkspace({
@@ -18,6 +21,12 @@ export function StudyWorkspace({
 }) {
   const [panel, setPanel] = useState('material');
   const audio = useRef<HTMLAudioElement>(null);
+  const [sources, setSources] = useState<StudySource[]>([]);
+  const [sourceError, setSourceError] = useState('');
+  const [sourceRevision, setSourceRevision] = useState(0);
+  const [selectedSource, setSelectedSource] = useState<StudySource | null>(
+    null,
+  );
   function seek(seconds: number) {
     const player = audio.current;
     if (!player) return;
@@ -32,6 +41,26 @@ export function StudyWorkspace({
   );
   const note = notes?.available ? notes.data : null;
   const text = transcript?.available ? transcript.data : null;
+  useEffect(() => {
+    const abort = new AbortController();
+    readSources(document.id, abort.signal).then(
+      (value) => {
+        if (!abort.signal.aborted) {
+          setSources(value);
+          setSourceError('');
+        }
+      },
+      (cause) => {
+        if (!abort.signal.aborted) setSourceError(studyError(cause));
+      },
+    );
+    return () => abort.abort();
+  }, [document.id, document.updatedAt, status?.updatedAt, sourceRevision]);
+  function showSource(source: StudySource) {
+    setSelectedSource(source);
+    setPanel(source.kind === 'pdf' ? 'material' : 'transcript');
+    if (source.start !== null) seek(source.start);
+  }
   return (
     <section className="study-workspace" aria-label="Study workspace">
       {document.recordingId ? (
@@ -92,6 +121,21 @@ export function StudyWorkspace({
           </button>
         ))}
       </div>
+      {sourceError ? (
+        <p role="alert">
+          {sourceError}{' '}
+          <button onClick={() => setSourceRevision((n) => n + 1)}>
+            Reload sources
+          </button>
+        </p>
+      ) : null}
+      {selectedSource ? (
+        <aside className="study-citation" aria-label="Selected source">
+          <strong>{sourceLabel(selectedSource)}</strong>
+          <p>{selectedSource.text}</p>
+          <button onClick={() => setSelectedSource(null)}>Close source</button>
+        </aside>
+      ) : null}
       <section
         id="panel-material"
         role="tabpanel"
@@ -99,7 +143,14 @@ export function StudyWorkspace({
         hidden={panel !== 'material'}
       >
         {document.hasPdf ? (
-          <PdfMaterial document={document} />
+          <PdfMaterial
+            document={document}
+            page={
+              selectedSource?.kind === 'pdf'
+                ? (selectedSource.page ?? undefined)
+                : undefined
+            }
+          />
         ) : (
           <section className="document-material surface">
             <UploadPdf id={document.id} onSaved={onSaved} />
@@ -122,49 +173,56 @@ export function StudyWorkspace({
         className="document-material surface"
       >
         <h2>Summary notes</h2>
-        {error ? (
-          <p role="alert">
-            {error} <button onClick={retry}>Try again</button>
-          </p>
-        ) : null}
-        {note ? (
-          <div lang={notes?.available ? notes.language : undefined}>
-            <p className="muted">
-              {notes?.available && notes.provider === 'fixture'
-                ? 'Synthetic test fixture. '
-                : ''}
-              AI-generated from the transcript. Check details against the
-              original.
+        <DocumentNotes
+          key={document.updatedAt}
+          id={document.id}
+          sources={sources}
+          onSource={showSource}
+        >
+          {error ? (
+            <p role="alert">
+              {error} <button onClick={retry}>Try again</button>
             </p>
-            <h3>Overview</h3>
-            <p>{note.overview}</p>
-            {(
-              [
-                ['Key concepts', note.key_concepts],
-                ['Examples', note.examples],
-                ['Review questions', note.review_questions],
-                ['Unclear passages', note.unclear_passages],
-              ] as const
-            ).map(([title, items]) =>
-              items.length ? (
-                <section key={title}>
-                  <h3>{title}</h3>
-                  <ul>
-                    {items.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null,
-            )}
-          </div>
-        ) : (
-          <p>
-            {document.recordingId
-              ? 'Notes will appear after lecture processing finishes.'
-              : 'Link a lecture recording to view its notes.'}
-          </p>
-        )}
+          ) : null}
+          {note ? (
+            <div lang={notes?.available ? notes.language : undefined}>
+              <p className="muted">
+                {notes?.available && notes.provider === 'fixture'
+                  ? 'Synthetic test fixture. '
+                  : ''}
+                AI-generated from the transcript. Check details against the
+                original.
+              </p>
+              <h3>Overview</h3>
+              <p>{note.overview}</p>
+              {(
+                [
+                  ['Key concepts', note.key_concepts],
+                  ['Examples', note.examples],
+                  ['Review questions', note.review_questions],
+                  ['Unclear passages', note.unclear_passages],
+                ] as const
+              ).map(([title, items]) =>
+                items.length ? (
+                  <section key={title}>
+                    <h3>{title}</h3>
+                    <ul>
+                      {items.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null,
+              )}
+            </div>
+          ) : (
+            <p>
+              {document.recordingId
+                ? 'Notes will appear after lecture processing finishes.'
+                : 'Link a lecture recording to view its notes.'}
+            </p>
+          )}
+        </DocumentNotes>
       </section>
       <section
         id="panel-transcript"
