@@ -1,0 +1,35 @@
+.browser-recorder {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border, #dedbd4);
+  border-radius: 12px;
+}
+.browser-recorder h3 {
+  margin-top: 0;
+}
+.browser-recorder p {
+  line-height: 1.5;
+}
+.browser-recorder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
+.browser-recorder audio {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+.browser-recorder progress {
+  width: 100%;
+}
+.browser-recorder label {
+  display: block;
+  margin-block: 0.75rem;
+}
+.browser-recorder input {
+  display: block;
+  width: 100%;
+  max-width: 26rem;
+  margin-top: 0.25rem;
+}

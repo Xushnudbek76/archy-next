@@ -1,0 +1,143 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import {
+  BrowserRecordingSession,
+  chooseRecordingMime,
+  microphoneError,
+  type CaptureEnvironment,
+  type Recorder,
+} from '../libs/components/recordings/browser-capture.ts';
+
+function fixture() {
+  let now = 0;
+  let stoppedTracks = 0;
+  const track = {
+    stop: () => stoppedTracks++,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  };
+  const stream = { getTracks: () => [track] } as unknown as MediaStream;
+  const recorder: Recorder = {
+    state: 'inactive',
+    mimeType: 'audio/webm;codecs=opus',
+    ondataavailable: null,
+    onstop: null,
+    onerror: null,
+    start() {
+      this.state = 'recording';
+    },
+    pause() {
+      this.state = 'paused';
+    },
+    resume() {
+      this.state = 'recording';
+    },
+    stop() {
+      this.state = 'inactive';
+      this.ondataavailable?.({
+        data: new Blob(['audio'], { type: this.mimeType }),
+      });
+      this.onstop?.();
+    },
+  };
+  const environment: CaptureEnvironment = {
+    secureContext: true,
+    supported: true,
+    supportsType: (type) => type.startsWith('audio/webm'),
+    getStream: async () => stream,
+    createRecorder: () => recorder,
+    now: () => now,
+  };
+  const session = new BrowserRecordingSession(environment, () => {});
+  return {
+    session,
+    recorder,
+    environment,
+    setTime: (value: number) => {
+      now = value;
+    },
+    stoppedTracks: () => stoppedTracks,
+  };
+}
+
+test('negotiates a supported audio container and reports unsupported formats', () => {
+  assert.equal(
+    chooseRecordingMime((type) => type === 'audio/mp4'),
+    'audio/mp4',
+  );
+  assert.equal(
+    chooseRecordingMime(() => false),
+    null,
+  );
+});
+
+test('pause excludes wall time from the server recording limit', async () => {
+  const f = fixture();
+  await f.session.start(1200);
+  f.setTime(10_000);
+  f.session.pause();
+  f.setTime(3_610_000);
+  assert.equal(f.session.snapshot.elapsedMs, 10_000);
+  f.session.resume();
+  f.setTime(4_800_000);
+  f.session.tick();
+  assert.equal(f.session.snapshot.phase, 'stopped');
+  assert.equal(f.session.snapshot.elapsedMs, 1_200_000);
+  assert.equal(await f.session.snapshot.blob?.text(), 'audio');
+  assert.equal(f.stoppedTracks(), 1);
+  f.session.dispose();
+});
+
+test('unsupported or insecure capture never requests microphone permission', async () => {
+  const f = fixture();
+  f.environment.secureContext = false;
+  f.environment.getStream = async () => {
+    assert.fail('must not prompt');
+  };
+  await f.session.start(1200);
+  assert.match(f.session.snapshot.error ?? '', /HTTPS|localhost/);
+  assert.equal(f.session.snapshot.phase, 'idle');
+});
+
+test('permission denial and revoked microphone have actionable messages', async () => {
+  const f = fixture();
+  f.environment.getStream = async () => {
+    throw new DOMException('Denied', 'NotAllowedError');
+  };
+  await f.session.start(1200);
+  assert.match(f.session.snapshot.error ?? '', /permission/);
+  assert.match(
+    microphoneError(new DOMException('', 'NotFoundError')),
+    /microphone/,
+  );
+  assert.match(
+    microphoneError(new DOMException('', 'NotReadableError')),
+    /another app/,
+  );
+});
+
+test('dispose stops a stream granted after the component leaves', async () => {
+  const f = fixture();
+  let grant: ((stream: MediaStream) => void) | undefined;
+  f.environment.getStream = () =>
+    new Promise((resolve) => {
+      grant = resolve;
+    });
+  const start = f.session.start(1200);
+  f.session.dispose();
+  grant?.({ getTracks: () => [{ stop: () => {} }] } as unknown as MediaStream);
+  await start;
+  assert.equal(f.recorder.state, 'inactive');
+});
+
+test('memory guard stops capture while retaining the audio already captured', async () => {
+  const f = fixture();
+  await f.session.start(1200, 8);
+  f.recorder.ondataavailable?.({ data: new Blob(['first']) });
+  f.recorder.ondataavailable?.({ data: new Blob(['overflow']) });
+  assert.equal(f.session.snapshot.phase, 'stopped');
+  assert.match(f.session.snapshot.error ?? '', /memory/);
+  assert.equal(await f.session.snapshot.blob?.text(), 'first');
+  assert.equal(f.stoppedTracks(), 1);
+  f.session.dispose();
+});
