@@ -72,3 +72,50 @@ test('quiz endpoint paths reject untrusted IDs', () => {
   );
   assert.throws(() => quizPath('../documents'));
 });
+
+test('attempt guards verify server score consistency and option bounds against its quiz', async () => {
+  const { isQuizAttempt } = await import('../libs/types/quizzes.ts');
+  const attempt = {
+    id: quizFixture.documentId,
+    quizId: quizFixture.id,
+    score: 1,
+    total: 1,
+    createdAt: quizFixture.createdAt,
+    results: [
+      {
+        questionId: quizFixture.questions[0]!.id,
+        answer: 0,
+        correctAnswer: 0,
+        correct: true,
+        explanation: 'Inertia resists changes in motion.',
+        sourceIds: ['pdf:source'],
+      },
+    ],
+  };
+  assert.equal(isQuizAttempt(attempt, quizFixture), true);
+  assert.equal(isQuizAttempt({ ...attempt, score: 0 }, quizFixture), false);
+  assert.equal(
+    isQuizAttempt(
+      { ...attempt, results: [{ ...attempt.results[0], answer: true }] },
+      quizFixture,
+    ),
+    false,
+  );
+  assert.equal(
+    isQuizAttempt(
+      { ...attempt, results: [{ ...attempt.results[0], correctAnswer: 4 }] },
+      quizFixture,
+    ),
+    false,
+  );
+  assert.equal(
+    isQuizAttempt(
+      {
+        ...attempt,
+        results: [{ ...attempt.results[0], questionId: quizFixture.id }],
+      },
+      quizFixture,
+    ),
+    false,
+  );
+});

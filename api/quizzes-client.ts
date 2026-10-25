@@ -1,6 +1,10 @@
 import { ApiError, jsonRequest } from './json-client.ts';
 import {
   isQuiz,
+  isQuizAttempt,
+  quizAnswers,
+  type QuizAnswer,
+  type QuizAttempt,
   quizPath,
   type Quiz,
   type QuizSettings,
@@ -73,4 +77,38 @@ export function quizError(cause: unknown) {
   if (cause.status === 429)
     return 'The quiz limit has been reached. Please try again later.';
   return cause.message;
+}
+
+export async function submitQuizAttempt(
+  quiz: Quiz,
+  answers: QuizAnswer[],
+  signal?: AbortSignal,
+): Promise<QuizAttempt> {
+  if (
+    new Set(answers.map((answer) => answer.questionId)).size !== answers.length
+  )
+    throw new Error('Answer every question exactly once.');
+  const validated = quizAnswers(
+    quiz,
+    Object.fromEntries(
+      answers.map((answer) => [answer.questionId, answer.answer]),
+    ),
+  );
+  const value = await jsonRequest(
+    quizPath(quiz.id, 'attempts'),
+    { answers: validated },
+    'POST',
+    { signal },
+  );
+  signal?.throwIfAborted();
+  return isQuizAttempt(value, quiz) &&
+    value.results.every((result) =>
+      validated.some(
+        (answer) =>
+          answer.questionId === result.questionId &&
+          answer.answer === result.answer,
+      ),
+    )
+    ? value
+    : invalid();
 }

@@ -63,3 +63,101 @@ export function quizPath(id: string, feature?: 'attempts' | 'retry') {
   if (!documentId(id)) throw new Error('Invalid quiz');
   return `/api/study/quizzes/${id}${feature ? `/${feature}` : ''}`;
 }
+
+export type QuizAnswer = { questionId: string; answer: number };
+export type QuizAttempt = {
+  id: string;
+  quizId: string;
+  score: number;
+  total: number;
+  createdAt: string;
+  results: {
+    questionId: string;
+    answer: number;
+    correctAnswer: number;
+    correct: boolean;
+    explanation: string;
+    sourceIds: string[];
+  }[];
+};
+const optionIndex = (value: unknown): value is number =>
+  typeof value === 'number' &&
+  Number.isSafeInteger(value) &&
+  value >= 0 &&
+  value < 4;
+export function isQuizAttempt(
+  value: unknown,
+  quiz?: Quiz,
+): value is QuizAttempt {
+  if (
+    !object(value) ||
+    !documentId(value.id) ||
+    !documentId(value.quizId) ||
+    !Number.isSafeInteger(value.score) ||
+    !Number.isSafeInteger(value.total) ||
+    Number(value.total) < 1 ||
+    Number(value.total) > 15 ||
+    Number(value.score) < 0 ||
+    Number(value.score) > Number(value.total) ||
+    typeof value.createdAt !== 'string' ||
+    !Number.isFinite(Date.parse(value.createdAt)) ||
+    !Array.isArray(value.results) ||
+    value.results.length !== value.total
+  )
+    return false;
+  const results = value.results;
+  if (
+    !results.every(
+      (result) =>
+        object(result) &&
+        documentId(result.questionId) &&
+        optionIndex(result.answer) &&
+        optionIndex(result.correctAnswer) &&
+        typeof result.correct === 'boolean' &&
+        result.correct === (result.answer === result.correctAnswer) &&
+        text(result.explanation, 1500) &&
+        Array.isArray(result.sourceIds) &&
+        result.sourceIds.length >= 1 &&
+        result.sourceIds.length <= 20 &&
+        result.sourceIds.every((id) => text(id, 160)) &&
+        unique(result.sourceIds),
+    )
+  )
+    return false;
+  if (
+    !unique(results.map((result) => result.questionId)) ||
+    results.filter((result) => result.correct).length !== value.score
+  )
+    return false;
+  return (
+    !quiz ||
+    (value.quizId === quiz.id &&
+      value.total === quiz.questions.length &&
+      results.every((result) => {
+        const question = quiz.questions.find((q) => q.id === result.questionId);
+        return (
+          !!question &&
+          result.answer < question.options.length &&
+          result.correctAnswer < question.options.length
+        );
+      }))
+  );
+}
+export function quizAnswers(
+  quiz: Quiz,
+  answers: Record<string, number>,
+): QuizAnswer[] {
+  if (
+    Object.keys(answers).length !== quiz.questions.length ||
+    Object.keys(answers).some(
+      (id) => !quiz.questions.some((question) => question.id === id),
+    )
+  )
+    throw new Error('Answer every question before submitting.');
+  return quiz.questions.map((question) => {
+    const answer = answers[question.id];
+    if (!optionIndex(answer) || answer >= question.options.length)
+      throw new Error('Choose a valid option for every question.');
+    return { questionId: question.id, answer };
+  });
+}

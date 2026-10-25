@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { QuizPlayer } from './QuizPlayer';
 import { createQuiz, listQuizzes, quizError } from '@/api/quizzes-client';
 import type { Quiz, QuizSettings } from '@/libs/types/quizzes';
 import type { StudySource } from '@/libs/types/study';
@@ -65,6 +66,14 @@ function QuizDocument({ documentId }: Props) {
       if (!controller.signal.aborted) setPending(false);
     }
   }
+  if (selected)
+    return (
+      <QuizPlayer
+        key={selected.id}
+        quiz={selected}
+        onBack={() => setSelected(null)}
+      />
+    );
   return (
     <section className="document-quizzes" aria-label="Document quizzes">
       <h2>Study quizzes</h2>
@@ -180,23 +189,6 @@ function QuizDocument({ documentId }: Props) {
           ))}
         </ul>
       )}
-      {selected ? (
-        <section className="quiz-preview" aria-label="Quiz preview">
-          <h3>{selected.title}</h3>
-          <ol>
-            {selected.questions.map((question) => (
-              <li key={question.id}>
-                <p>{question.prompt}</p>
-                <ul>
-                  {question.options.map((option, index) => (
-                    <li key={index}>{option}</li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
     </section>
   );
 }

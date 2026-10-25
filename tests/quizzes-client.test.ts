@@ -83,3 +83,80 @@ test('quiz detail rejects an unrelated ID and abort never returns stale quiz sta
     name: 'AbortError',
   });
 });
+
+test('attempt submission validates complete answers and checks the server response before use', async (t) => {
+  const { submitQuizAttempt } = await import('../api/quizzes-client.ts');
+  const { isQuiz } = await import('../libs/types/quizzes.ts');
+  assert(isQuiz(quizFixture));
+  const payloads: unknown[] = [];
+  t.mock.method(
+    globalThis,
+    'fetch',
+    async (path: string, init?: RequestInit) => {
+      if (path === '/api/auth/csrf')
+        return Response.json({ csrfToken: 'csrf' });
+      assert.equal(path, `/api/study/quizzes/${quizFixture.id}/attempts`);
+      payloads.push(JSON.parse(String(init?.body)));
+      return Response.json({
+        id: documentId,
+        quizId: quizFixture.id,
+        score: 1,
+        total: 1,
+        createdAt: quizFixture.createdAt,
+        results: [
+          {
+            questionId: quizFixture.questions[0]!.id,
+            answer: 0,
+            correctAnswer: 0,
+            correct: true,
+            explanation: 'Inertia.',
+            sourceIds: ['pdf:source'],
+          },
+        ],
+      });
+    },
+  );
+  await assert.rejects(submitQuizAttempt(quizFixture, []), /every question/);
+  const result = await submitQuizAttempt(quizFixture, [
+    { questionId: quizFixture.questions[0]!.id, answer: 0 },
+  ]);
+  assert.equal(result.score, 1);
+  assert.deepEqual(payloads, [
+    { answers: [{ questionId: quizFixture.questions[0]!.id, answer: 0 }] },
+  ]);
+});
+
+test('submission refuses a valid score belonging to different selected answers', async (t) => {
+  const { submitQuizAttempt } = await import('../api/quizzes-client.ts');
+  const { isQuiz } = await import('../libs/types/quizzes.ts');
+  assert(isQuiz(quizFixture));
+  t.mock.method(globalThis, 'fetch', async (path: string) =>
+    Response.json(
+      path === '/api/auth/csrf'
+        ? { csrfToken: 'csrf' }
+        : {
+            id: documentId,
+            quizId: quizFixture.id,
+            score: 1,
+            total: 1,
+            createdAt: quizFixture.createdAt,
+            results: [
+              {
+                questionId: quizFixture.questions[0]!.id,
+                answer: 1,
+                correctAnswer: 1,
+                correct: true,
+                explanation: 'Other attempt.',
+                sourceIds: ['pdf:source'],
+              },
+            ],
+          },
+    ),
+  );
+  await assert.rejects(
+    submitQuizAttempt(quizFixture, [
+      { questionId: quizFixture.questions[0]!.id, answer: 0 },
+    ]),
+    /Quiz data/,
+  );
+});

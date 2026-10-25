@@ -55,3 +55,51 @@
 .quiz-preview li {
   margin-bottom: 0.75rem;
 }
+.quiz-player {
+  max-width: 54rem;
+}
+.quiz-question-nav,
+.quiz-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+.quiz-question-nav button {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border: 1px solid #c8c3b7;
+  border-radius: 8px;
+  background: white;
+}
+.quiz-question-nav button[aria-current] {
+  outline: 2px solid #3c5841;
+  outline-offset: 2px;
+}
+.quiz-question {
+  border: 0;
+  padding: 0;
+  margin-block: 1rem;
+}
+.quiz-question legend {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+.quiz-question label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid #dedbd4;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.quiz-question label.selected {
+  background: #f0f5ec;
+  border-color: #58734f;
+}
+.quiz-question input {
+  flex: 0 0 auto;
+}
