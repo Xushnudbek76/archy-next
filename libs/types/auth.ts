@@ -31,7 +31,20 @@ export function isUser(value: unknown): value is User {
 }
 
 export function safeReturnPath(value?: string): string {
-  return ['/', '/courses', '/recordings', '/settings'].includes(value ?? '')
+  if (
+    [
+      '/',
+      '/dashboard',
+      '/documents',
+      '/courses',
+      '/recordings',
+      '/settings',
+    ].includes(value ?? '')
+  )
+    return value!;
+  return /^\/documents\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value ?? '',
+  )
     ? value!
     : '/';
 }

@@ -3,6 +3,7 @@ import '@/styles/globals.css';
 import '@/styles/auth.css';
 import '@/styles/courses.css';
 import '@/styles/theme.css';
+import '@/styles/workspace.css';
 
 export const metadata: Metadata = {
   title: { default: 'Archy — Your lecture workspace', template: '%s | Archy' },
