@@ -6,6 +6,8 @@ import { PdfMaterial } from '@/libs/components/documents/PdfMaterial';
 import { UploadPdf } from '@/libs/components/documents/UploadPdf';
 import { AttachRecording } from '@/libs/components/documents/AttachRecording';
 import { BrowserRecorder } from '@/libs/components/recordings/BrowserRecorder';
+import { formatTime } from '@/libs/types/study';
+import { seekTime, adjacentTab } from './playback';
 
 export function StudyWorkspace({
   document,
@@ -16,6 +18,14 @@ export function StudyWorkspace({
 }) {
   const [panel, setPanel] = useState('material');
   const audio = useRef<HTMLAudioElement>(null);
+  function seek(seconds: number) {
+    const player = audio.current;
+    if (!player) return;
+    const time = seekTime(seconds, player.duration);
+    if (time === null) return;
+    player.currentTime = time;
+    player.focus();
+  }
   const { status, transcript, notes, error, retry } = useProcessing(
     document.recordingId ?? '',
     !!document.recordingId,
@@ -56,9 +66,27 @@ export function StudyWorkspace({
             key={id}
             id={`tab-${id}`}
             role="tab"
+            tabIndex={panel === id ? 0 : -1}
             aria-selected={panel === id}
             aria-controls={`panel-${id}`}
             onClick={() => setPanel(id!)}
+            onKeyDown={(event) => {
+              const buttons = Array.from(
+                event.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>(
+                  '[role="tab"]',
+                ),
+              );
+              const next = adjacentTab(
+                buttons.indexOf(event.currentTarget),
+                buttons.length,
+                event.key,
+              );
+              if (next !== null) {
+                event.preventDefault();
+                buttons[next]?.click();
+                buttons[next]?.focus();
+              }
+            }}
           >
             {label}
           </button>
@@ -147,12 +175,24 @@ export function StudyWorkspace({
       >
         <h2>Transcript</h2>
         {text ? (
-          <p
-            className="document-text"
-            lang={transcript?.available ? transcript.language : undefined}
-          >
-            {text.text}
-          </p>
+          <div lang={transcript?.available ? transcript.language : undefined}>
+            {text.segments.length ? (
+              text.segments.map((segment, index) => (
+                <div className="transcript-segment" key={index}>
+                  <button
+                    className="source-link"
+                    onClick={() => seek(segment.start)}
+                    aria-label={`Seek audio to ${formatTime(segment.start)}`}
+                  >
+                    {formatTime(segment.start)}
+                  </button>
+                  <p>{segment.text}</p>
+                </div>
+              ))
+            ) : (
+              <p className="document-text">{text.text}</p>
+            )}
+          </div>
         ) : (
           <p>
             {document.recordingId
