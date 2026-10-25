@@ -1,0 +1,61 @@
+'use client';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { documentError, getDocument } from '@/api/documents-client';
+import type { DocumentDetail } from '@/libs/types/documents';
+export function DocumentWorkspace({ id }: { id: string }) {
+  const [document, setDocument] = useState<DocumentDetail | null>(null);
+  const [error, setError] = useState('');
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    getDocument(id, controller.signal).then(
+      (value) => {
+        if (!controller.signal.aborted) {
+          setDocument(value);
+          setError('');
+        }
+      },
+      (cause) => {
+        if (!controller.signal.aborted) setError(documentError(cause));
+      },
+    );
+    return () => controller.abort();
+  }, [id, revision]);
+  return (
+    <div className="documents-page">
+      <Link href="/documents" className="document-back">
+        Back to My documents
+      </Link>
+      {error ? (
+        <div role="alert">
+          {error}
+          <button
+            className="secondary-button"
+            onClick={() => setRevision((n) => n + 1)}
+          >
+            Try again
+          </button>
+        </div>
+      ) : !document ? (
+        <p role="status">Opening your document…</p>
+      ) : (
+        <>
+          <header className="documents-heading">
+            <div>
+              <h1>{document.title}</h1>
+              <p>Your private study material.</p>
+            </div>
+          </header>
+          <section className="document-material surface">
+            <h2>Lecture material</h2>
+            <p>Add a PDF or keep a lecture recording in this document.</p>
+            <Link href="/recordings" className="primary-button">
+              Open recordings
+            </Link>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}

@@ -4,6 +4,8 @@ import {
 } from './auth-timeouts.ts';
 
 function timeoutMessage(path: string): string {
+  if (path.startsWith('/api/documents'))
+    return 'The request may have completed. Refresh your documents before trying again.';
   if (path.startsWith('/api/courses'))
     return 'The request may have completed. Refresh your courses before trying again.';
   return ['/api/auth/signup', '/api/auth/password-reset'].includes(path)

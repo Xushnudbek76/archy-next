@@ -1,12 +1,11 @@
 import { ProtectedWorkspace } from '@/libs/components/layout/ProtectedWorkspace';
-import { Overview } from '@/libs/components/homepage/Overview';
-
+import { DocumentsWorkspace } from '@/libs/components/documents/DocumentsWorkspace';
+import '@/styles/documents.css';
 export const dynamic = 'force-dynamic';
-
-export default function OverviewPage() {
+export default function WorkspaceHomePage() {
   return (
     <ProtectedWorkspace returnTo="/">
-      <Overview />
+      <DocumentsWorkspace />
     </ProtectedWorkspace>
   );
 }

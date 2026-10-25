@@ -8,7 +8,7 @@ import { Icon, type IconName } from '@/libs/components/common/Icon';
 import { useAuth } from '@/libs/hooks/useAuth';
 
 const navigation: { href: string; label: string; icon: IconName }[] = [
-  { href: '/', label: 'Overview', icon: 'grid' },
+  { href: '/documents', label: 'My documents', icon: 'book' },
   { href: '/courses', label: 'Courses', icon: 'book' },
   { href: '/recordings', label: 'Recordings', icon: 'audio' },
   { href: '/settings', label: 'Settings', icon: 'settings' },
