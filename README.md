@@ -18,7 +18,9 @@ Next.js App Router · React · TypeScript · Tailwind CSS · Node.js 24
 - Private audio uploads with progress, pause/resume, cancellation and native playback.
 - Unit tests, browser flow tests and GitHub Actions checks.
 
-Transcripts and AI notes follow. The overview illustration is decorative.
+- Private document gallery with search, course folders, rename/move and soft archive.
+- Private PDF uploads (20 MB, 200 pages), text extraction and a combined PDF/audio view.
+- Expandable saved transcripts and lecture notes; live provider activation is configured in the backend.
 
 ## Structure
 
@@ -65,7 +67,7 @@ Open [Archy locally](http://localhost:3000). In a separate terminal, configure
 `archy-api` using its README and start it with:
 
 ```sh
-python manage.py runserver 127.0.0.1:3007
+.venv-fastapi/bin/python -m uvicorn app.main:build_app --factory --host 127.0.0.1 --port 3007 --workers 1 --no-access-log
 ```
 
 Set the frontend's `APP_ORIGIN` and FastAPI's `FRONTEND_ORIGIN` to the exact browser origin,
@@ -153,7 +155,7 @@ FastAPI API with the isolated database and email setup described above.
 ## Recordings
 
 `/recordings` uploads audio into an active course, lists saved lectures and plays them through
-private session-checked routes. There is no duration cap. Browser hashing and transfer use
+private session-checked routes. Audio duration follows the backend upload policy shown in the upload form. Browser hashing and transfer use
 4 MiB slices so long files are never loaded completely into memory. Uploads can be paused,
 cancelled or resumed after reselecting the original file. Confirmed offsets live in FastAPI;
 a lost response is reconciled before the next chunk is sent.
@@ -180,3 +182,11 @@ and commit dates; use `feat` for new behavior and `fix` for actual corrections.
 ## Lecture processing
 
 Recording cards have an expandable transcript/notes panel. It reads private saved results from FastAPI, polls only while processing is active, and renders provider content as text. Groq credentials and background work belong entirely to `../archy-api`. Synthetic test results are labelled in the panel. See the backend's `docs/processing.md` for setup and recovery.
+
+## Documents and PDFs
+
+The public introduction is at `/en`; `/` and `/documents` open the protected document library. Courses act as folders. Existing recordings receive a document automatically; another document may reuse an owned recording alongside its PDF. Search, pagination, moving, renaming and archiving use the private FastAPI endpoints. Archiving hides a document without deleting its files.
+
+PDFs are limited to 20 MiB and 200 pages. Upload progress is shown, then the backend extracts selectable text in a bounded process. Scanned, encrypted, malformed and oversized PDFs return explicit errors. A timed-out upload is never replayed automatically: refresh the document before retrying. PDF content and audio stay behind session-checked routes; no storage paths or provider keys reach the browser.
+
+The document view includes the original PDF, extracted text, linked audio, and the existing transcript/notes panel. PDFs do not yet generate AI summaries or use OCR. The backend's `docs/documents.md` describes storage, limits and migration requirements.

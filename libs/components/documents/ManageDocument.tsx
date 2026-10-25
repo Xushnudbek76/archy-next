@@ -15,7 +15,7 @@ export function ManageDocument({
 }: {
   document: Document;
   folders: Course[];
-  onSaved: () => void;
+  onSaved: (document?: Document) => void;
   disabled?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -48,9 +48,9 @@ export function ManageDocument({
     setPending(true);
     setError('');
     try {
-      await archiveDocument(document.id);
+      const archived = await archiveDocument(document.id);
       dialog.current?.close();
-      onSaved();
+      onSaved(archived);
     } catch (cause) {
       setError(documentError(cause));
     } finally {

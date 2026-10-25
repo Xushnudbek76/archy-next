@@ -15,8 +15,13 @@ function invalid(): never {
     'Recording data is temporarily unavailable.',
   );
 }
-export async function listRecordings(page = 1) {
-  const value = await jsonRequest(`/api/recordings?page=${page}`);
+export async function listRecordings(page = 1, signal?: AbortSignal) {
+  const value = await jsonRequest(
+    `/api/recordings?page=${page}`,
+    undefined,
+    undefined,
+    { signal },
+  );
   return isPage(value, isRecording) ? value : invalid();
 }
 export async function listUploads(page = 1) {
