@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   conversation,
   conversations,
@@ -7,6 +7,8 @@ import {
 } from '@/api/tutor-client';
 import { studyError } from '@/api/study-client';
 import type { Conversation, ConversationDetail } from '@/libs/types/tutor';
+import type { StudyLanguage } from '@/libs/types/study';
+import { sendTutorMessage } from '@/api/tutor-stream-client';
 export function DocumentTutor({ documentId }: { documentId: string }) {
   const [items, setItems] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState('');
@@ -15,6 +17,70 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
+  const [draft, setDraft] = useState('');
+  const [language, setLanguage] = useState<StudyLanguage>('en');
+  const [sending, setSending] = useState(false);
+  const [partial, setPartial] = useState('');
+  const controller = useRef<AbortController | null>(null);
+  const request = useRef<{
+    id: string;
+    text: string;
+    language: StudyLanguage;
+    conversation: string;
+  } | null>(null);
+  useEffect(() => () => controller.current?.abort(), []);
+  async function send(event: React.FormEvent) {
+    event.preventDefault();
+    if (controller.current || !selected || !draft.trim()) return;
+    const abort = new AbortController();
+    controller.current = abort;
+    setSending(true);
+    setError('');
+    setPartial('');
+    const text = draft.trim();
+    if (
+      !request.current ||
+      request.current.text !== text ||
+      request.current.language !== language ||
+      request.current.conversation !== selected
+    )
+      request.current = {
+        id: crypto.randomUUID(),
+        text,
+        language,
+        conversation: selected,
+      };
+    try {
+      await sendTutorMessage(
+        selected,
+        text,
+        language,
+        request.current.id,
+        abort.signal,
+        (event) => {
+          if (event.type === 'delta') setPartial((old) => old + event.text);
+        },
+      );
+      const saved = await conversation(selected, abort.signal);
+      if (!abort.signal.aborted) {
+        setDetail(saved);
+        setPartial('');
+        setDraft('');
+        request.current = null;
+      }
+    } catch (cause) {
+      setError(
+        abort.signal.aborted
+          ? 'Answer stopped. The partial reply is incomplete. You can retry the question.'
+          : cause instanceof Error
+            ? cause.message
+            : 'The response was interrupted. Retry the question.',
+      );
+    } finally {
+      controller.current = null;
+      setSending(false);
+    }
+  }
   useEffect(() => {
     const abort = new AbortController();
     conversations(documentId, abort.signal).then(
@@ -60,6 +126,9 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
       setItems((old) => [value, ...old]);
       setSelected(value.id);
       setDetail(null);
+      setPartial('');
+      setDraft('');
+      request.current = null;
     } catch (cause) {
       setError(studyError(cause));
     } finally {
@@ -76,7 +145,7 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
       <div className="study-controls">
         <button
           className="secondary-button"
-          disabled={pending}
+          disabled={pending || sending || loading}
           onClick={() => void create()}
         >
           {pending ? 'Opening conversation…' : 'New conversation'}
@@ -86,9 +155,14 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
             Conversation
             <select
               value={selected}
+              disabled={sending}
               onChange={(e) => {
                 setSelected(e.target.value);
                 setDetail(null);
+                setPartial('');
+                setError('');
+                setDraft('');
+                request.current = null;
               }}
             >
               {items.map((item) => (
@@ -103,10 +177,67 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
       {error ? (
         <p role="alert">
           {error}{' '}
-          <button onClick={() => setRevision((n) => n + 1)}>
+          <button disabled={sending} onClick={() => setRevision((n) => n + 1)}>
             Reload conversations
           </button>
         </p>
+      ) : null}
+      {partial ? (
+        <article className="tutor-message" aria-busy={sending}>
+          <strong>
+            {sending
+              ? 'Archy tutor is replying…'
+              : 'Incomplete reply — not saved'}
+          </strong>
+          <p>{partial}</p>
+        </article>
+      ) : null}
+      {selected && detail?.id === selected ? (
+        <form className="tutor-form" onSubmit={(event) => void send(event)}>
+          <label htmlFor={`tutor-question-${documentId}`}>Your question</label>
+          <textarea
+            id={`tutor-question-${documentId}`}
+            value={draft}
+            maxLength={2000}
+            disabled={sending}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Explain a concept from this material…"
+          />
+          <div className="study-controls">
+            <label>
+              Answer language
+              <select
+                value={language}
+                disabled={sending}
+                onChange={(event) =>
+                  setLanguage(event.target.value as StudyLanguage)
+                }
+              >
+                <option value="en">English</option>
+                <option value="ko">한국어</option>
+              </select>
+            </label>
+            <button
+              className="primary-button"
+              disabled={sending || !draft.trim()}
+            >
+              {sending ? 'Preparing answer…' : 'Ask tutor'}
+            </button>
+            {sending ? (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => controller.current?.abort()}
+              >
+                Stop answer
+              </button>
+            ) : null}
+          </div>
+          <p className="muted">
+            AI-generated answers may contain mistakes. Check the original
+            material.
+          </p>
+        </form>
       ) : null}
       {loading ? (
         <p role="status">Loading conversations…</p>
