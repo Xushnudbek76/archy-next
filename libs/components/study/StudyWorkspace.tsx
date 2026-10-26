@@ -11,6 +11,8 @@ import { sourceLabel, type StudySource } from '@/libs/types/study';
 import { readSources, studyError } from '@/api/study-client';
 import { DocumentNotes } from './DocumentNotes';
 import { DocumentTutor } from '@/libs/components/tutor/DocumentTutor';
+import { DocumentQuizzes } from '@/libs/components/quizzes/DocumentQuizzes';
+import { sourceDestination, sourcesForRevision } from './source-navigation';
 import { seekTime, adjacentTab } from './playback';
 
 export function StudyWorkspace({
@@ -22,12 +24,19 @@ export function StudyWorkspace({
 }) {
   const [panel, setPanel] = useState('material');
   const audio = useRef<HTMLAudioElement>(null);
-  const [sources, setSources] = useState<StudySource[]>([]);
+  const [loadedSources, setLoadedSources] = useState<{
+    revision: string;
+    items: StudySource[];
+  } | null>(null);
   const [sourceError, setSourceError] = useState('');
   const [sourceRevision, setSourceRevision] = useState(0);
   const [selectedSource, setSelectedSource] = useState<StudySource | null>(
     null,
   );
+  const sourcePreview = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (selectedSource) sourcePreview.current?.focus();
+  }, [selectedSource]);
   function seek(seconds: number) {
     const player = audio.current;
     if (!player) return;
@@ -42,12 +51,14 @@ export function StudyWorkspace({
   );
   const note = notes?.available ? notes.data : null;
   const text = transcript?.available ? transcript.data : null;
+  const materialRevision = `${document.id}:${document.updatedAt}:${document.recordingId ?? ''}:${status?.updatedAt ?? ''}`;
+  const sources = sourcesForRevision(loadedSources, materialRevision);
   useEffect(() => {
     const abort = new AbortController();
     readSources(document.id, abort.signal).then(
       (value) => {
         if (!abort.signal.aborted) {
-          setSources(value);
+          setLoadedSources({ revision: materialRevision, items: value });
           setSourceError('');
         }
       },
@@ -56,11 +67,12 @@ export function StudyWorkspace({
       },
     );
     return () => abort.abort();
-  }, [document.id, document.updatedAt, status?.updatedAt, sourceRevision]);
+  }, [document.id, materialRevision, sourceRevision]);
   function showSource(source: StudySource) {
-    setSelectedSource(source);
+    setSelectedSource({ ...source });
     setPanel(source.kind === 'pdf' ? 'material' : 'transcript');
-    if (source.start !== null) seek(source.start);
+    const destination = sourceDestination(source, sources);
+    if (destination.time !== null) seek(destination.time);
   }
   return (
     <section className="study-workspace" aria-label="Study workspace">
@@ -92,6 +104,7 @@ export function StudyWorkspace({
           ['notes', 'Summary notes'],
           ['transcript', 'Transcript'],
           ['tutor', 'AI tutor'],
+          ['quizzes', 'Quizzes'],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -132,8 +145,19 @@ export function StudyWorkspace({
         </p>
       ) : null}
       {selectedSource ? (
-        <aside className="study-citation" aria-label="Selected source">
+        <aside
+          ref={sourcePreview}
+          tabIndex={-1}
+          className="study-citation"
+          aria-label="Selected source"
+        >
           <strong>{sourceLabel(selectedSource)}</strong>
+          {!sourceDestination(selectedSource, sources).current ? (
+            <p>
+              This material has changed. This is the saved excerpt; its original
+              location is no longer available.
+            </p>
+          ) : null}
           <p>{selectedSource.text}</p>
           <button onClick={() => setSelectedSource(null)}>Close source</button>
         </aside>
@@ -148,8 +172,8 @@ export function StudyWorkspace({
           <PdfMaterial
             document={document}
             page={
-              selectedSource?.kind === 'pdf'
-                ? (selectedSource.page ?? undefined)
+              selectedSource
+                ? (sourceDestination(selectedSource, sources).page ?? undefined)
                 : undefined
             }
           />
@@ -268,7 +292,21 @@ export function StudyWorkspace({
         hidden={panel !== 'tutor'}
         className="document-material surface"
       >
-        <DocumentTutor documentId={document.id} />
+        <DocumentTutor documentId={document.id} onSource={showSource} />
+      </section>
+      <section
+        id="panel-quizzes"
+        role="tabpanel"
+        aria-labelledby="tab-quizzes"
+        hidden={panel !== 'quizzes'}
+        className="document-material surface"
+      >
+        <DocumentQuizzes
+          key={document.id}
+          documentId={document.id}
+          sources={sources}
+          onSource={showSource}
+        />
       </section>
       <details className="document-material surface">
         <summary>Record a lecture</summary>

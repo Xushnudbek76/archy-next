@@ -1,6 +1,18 @@
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { studyRoute, forwardStudyRequest } from '../api/study-proxy.ts';
+import { studyError } from '../api/study-client.ts';
+import { ApiError } from '../api/json-client.ts';
+test('notes explain disabled AI and unavailable source material', () => {
+  assert.match(
+    studyError(new ApiError(503, 'study_unavailable', 'Generic error')),
+    /configured/,
+  );
+  assert.match(
+    studyError(new ApiError(409, 'study_sources_unavailable', 'Generic error')),
+    /readable material/,
+  );
+});
 test('study generation has a distinct bounded write budget', () => {
   const route = studyRoute(
     ['documents', '89e0ae43-73e9-45db-a535-dd336adec689', 'study-notes'],

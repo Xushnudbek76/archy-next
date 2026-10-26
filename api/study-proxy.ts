@@ -35,7 +35,11 @@ export function studyRoute(
       parts[2] === 'attempts' &&
       ['GET', 'POST'].includes(method)
     )
-      return { path: `/v1/quizzes/${parts[1]}/attempts`, method };
+      return {
+        path: `/v1/quizzes/${parts[1]}/attempts`,
+        method,
+        errorMessages: studyErrors,
+      };
     if (parts.length === 3 && parts[2] === 'retry' && method === 'POST')
       return {
         path: `/v1/quizzes/${parts[1]}/retry`,

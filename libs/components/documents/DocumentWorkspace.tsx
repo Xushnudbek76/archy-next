@@ -48,8 +48,11 @@ export function DocumentWorkspace({ id }: { id: string }) {
             Try again
           </button>
         </div>
-      ) : !document ? (
-        <p role="status">Opening your document…</p>
+      ) : null}
+      {!document || document.id !== id ? (
+        !error ? (
+          <p role="status">Opening your document…</p>
+        ) : null
       ) : (
         <>
           <header className="documents-heading">

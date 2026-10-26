@@ -8,6 +8,7 @@ import {
 export type AuthConfiguration = { apiBaseUrl: string; appOrigin: string };
 const errors: Record<number, [string, string]> = {
   400: ['invalid_request', 'Check your details and try again.'],
+  401: ['unauthenticated', 'Sign in again to continue.'],
   403: ['forbidden', 'The request could not be accepted.'],
   404: ['not_found', 'This request is not available.'],
   405: ['method_not_allowed', 'This request is not available.'],
@@ -189,7 +190,10 @@ export async function forwardJsonRequest(
             ? payload.code
             : '';
         const message = route.errorMessages[code];
-        if (message && [400, 409, 413, 502, 503, 507].includes(upstream.status))
+        if (
+          message &&
+          [400, 409, 413, 429, 502, 503, 507].includes(upstream.status)
+        )
           return Response.json(
             { code, message, requestId: id },
             { status: upstream.status, headers },

@@ -6,17 +6,10 @@ import {
   readProcessing,
   readTranscript,
 } from '@/api/processing-client';
-import {
-  shouldPoll,
-  type NoteResult,
-  type ProcessingStatus,
-  type TranscriptResult,
-} from '@/libs/types/processing';
+import { shouldPoll } from '@/libs/types/processing';
+import { processingState } from './processing-state';
 export function useProcessing(id: string, expanded: boolean) {
-  const [status, setStatus] = useState<ProcessingStatus | null>(null);
-  const [transcript, setTranscript] = useState<TranscriptResult | null>(null);
-  const [notes, setNotes] = useState<NoteResult | null>(null);
-  const [error, setError] = useState('');
+  const [data, setData] = useState(() => processingState(id));
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!expanded) return;
@@ -41,8 +34,9 @@ export function useProcessing(id: string, expanded: boolean) {
       try {
         const state = await readProcessing(id, signal);
         if (stopped || signal.aborted) return;
-        setStatus(state);
-        setError('');
+        setData((previous) =>
+          processingState(id, previous, { status: state, error: '' }),
+        );
         const [text, note] = await Promise.all([
           state.transcriptAvailable && !transcriptRead
             ? readTranscript(id, signal)
@@ -51,11 +45,13 @@ export function useProcessing(id: string, expanded: boolean) {
         ]);
         if (stopped || signal.aborted) return;
         if (text) {
-          setTranscript(text);
+          setData((previous) =>
+            processingState(id, previous, { transcript: text }),
+          );
           transcriptRead = text.available;
         }
         if (note) {
-          setNotes(note);
+          setData((previous) => processingState(id, previous, { notes: note }));
           notesRead = note.available;
         }
         finished = !shouldPoll(state);
@@ -65,10 +61,12 @@ export function useProcessing(id: string, expanded: boolean) {
         }
       } catch (cause) {
         if (stopped || signal.aborted) return;
-        setError(
+        const message =
           cause instanceof ApiError && [401, 403].includes(cause.status)
             ? 'Sign in again to view lecture notes.'
-            : 'Lecture notes are temporarily unavailable.',
+            : 'Lecture notes are temporarily unavailable.';
+        setData((previous) =>
+          processingState(id, previous, { error: message }),
         );
         if (!(
           cause instanceof ApiError && [401, 403, 404].includes(cause.status)
@@ -96,10 +94,7 @@ export function useProcessing(id: string, expanded: boolean) {
     };
   }, [id, expanded, revision]);
   return {
-    status,
-    transcript,
-    notes,
-    error,
+    ...processingState(id, data),
     retry: () => setRevision((value) => value + 1),
   };
 }

@@ -11,5 +11,7 @@ export const studyErrors: Readonly<Record<string, string>> = {
   no_incorrect_answers:
     'Every answer was correct. There are no mistakes to retry.',
   invalid_answers: 'Answer every question before submitting.',
+  attempt_limit:
+    'This quiz has reached its attempt limit. Generate another quiz to keep practising.',
   invalid_provider_output: 'The AI response could not be validated. Try again.',
 };

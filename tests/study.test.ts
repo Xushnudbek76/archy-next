@@ -5,6 +5,7 @@ import {
   isStudySource,
   isStudyNotes,
   sourceLabel,
+  boundedText,
 } from '../libs/types/study.ts';
 import { studyRoute } from '../api/study-proxy.ts';
 test('study routes accept only owned resource paths with valid UUIDs and methods', () => {
@@ -22,6 +23,10 @@ test('study routes accept only owned resource paths with valid UUIDs and methods
     studyRoute(['documents', id, 'sources', 'other'], 'GET'),
     undefined,
   );
+});
+test('study response lengths use the same Unicode character bounds as the API', () => {
+  assert.equal(boundedText('🔬'.repeat(100), 100), true);
+  assert.equal(boundedText('🔬'.repeat(101), 100), false);
 });
 test('source navigation rejects non-finite times and preserves unknown PDF pages', () => {
   const source = {

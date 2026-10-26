@@ -21,7 +21,7 @@ export type StudyLanguage = 'en' | 'ko';
 export const object = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v);
 export const boundedText = (v: unknown, max: number): v is string =>
-  typeof v === 'string' && v.length <= max;
+  typeof v === 'string' && (v.length <= max || Array.from(v).length <= max);
 export function isStudySource(v: unknown): v is StudySource {
   return (
     object(v) &&

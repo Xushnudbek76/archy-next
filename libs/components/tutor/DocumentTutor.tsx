@@ -7,9 +7,16 @@ import {
 } from '@/api/tutor-client';
 import { studyError } from '@/api/study-client';
 import type { Conversation, ConversationDetail } from '@/libs/types/tutor';
-import type { StudyLanguage } from '@/libs/types/study';
+import type { StudyLanguage, StudySource } from '@/libs/types/study';
+import { TutorMessages } from './TutorMessages';
 import { sendTutorMessage } from '@/api/tutor-stream-client';
-export function DocumentTutor({ documentId }: { documentId: string }) {
+export function DocumentTutor({
+  documentId,
+  onSource,
+}: {
+  documentId: string;
+  onSource: (source: StudySource) => void;
+}) {
   const [items, setItems] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState('');
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
@@ -22,6 +29,7 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
   const [sending, setSending] = useState(false);
   const [partial, setPartial] = useState('');
   const controller = useRef<AbortController | null>(null);
+  const historyRead = useRef<AbortController | null>(null);
   const request = useRef<{
     id: string;
     text: string;
@@ -32,6 +40,7 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
   async function send(event: React.FormEvent) {
     event.preventDefault();
     if (controller.current || !selected || !draft.trim()) return;
+    historyRead.current?.abort();
     const abort = new AbortController();
     controller.current = abort;
     setSending(true);
@@ -104,6 +113,7 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
   useEffect(() => {
     if (!selected) return;
     const abort = new AbortController();
+    historyRead.current = abort;
     conversation(selected, abort.signal).then(
       (value) => {
         if (!abort.signal.aborted) {
@@ -182,6 +192,9 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
           </button>
         </p>
       ) : null}
+      {detail?.id === selected ? (
+        <TutorMessages messages={detail.messages} onSource={onSource} />
+      ) : null}
       {partial ? (
         <article className="tutor-message" aria-busy={sending}>
           <strong>
@@ -243,22 +256,6 @@ export function DocumentTutor({ documentId }: { documentId: string }) {
         <p role="status">Loading conversations…</p>
       ) : !items.length ? (
         <p>Start a conversation to study with the tutor.</p>
-      ) : null}
-      {detail?.id === selected ? (
-        <div className="tutor-messages" aria-label="Conversation messages">
-          {detail.messages.map((message) => (
-            <article
-              className={`tutor-message ${message.role}`}
-              key={message.id}
-            >
-              <strong>{message.role === 'user' ? 'You' : 'Archy tutor'}</strong>
-              <p>{message.text}</p>
-              {message.provider === 'fixture' ? (
-                <p className="muted">Synthetic test fixture.</p>
-              ) : null}
-            </article>
-          ))}
-        </div>
       ) : null}
     </section>
   );

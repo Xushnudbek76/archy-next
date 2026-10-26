@@ -23,8 +23,10 @@ export function DocumentNotes({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null);
+  const initialRead = useRef<AbortController | null>(null);
   useEffect(() => {
     const read = new AbortController();
+    initialRead.current = read;
     studyNotes(id, undefined, read.signal).then(
       (value) => {
         if (!read.signal.aborted) {
@@ -43,6 +45,7 @@ export function DocumentNotes({
   }, [id]);
   async function generate() {
     if (controller.current) return;
+    initialRead.current?.abort();
     const abort = new AbortController();
     controller.current = abort;
     setPending(true);

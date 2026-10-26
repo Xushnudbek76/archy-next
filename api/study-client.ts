@@ -1,4 +1,5 @@
 import { ApiError, jsonRequest } from './json-client.ts';
+import { studyErrors } from './study-errors.ts';
 import {
   isStudySource,
   isStudyNotes,
@@ -59,6 +60,7 @@ export function studyError(cause: unknown) {
     quota_wait: 'The AI provider is busy. Try again later.',
   };
   return (
+    studyErrors[cause.code] ??
     messages[cause.code] ??
     (cause.status === 429
       ? 'The AI limit has been reached. Please try again later.'

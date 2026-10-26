@@ -189,4 +189,12 @@ The public introduction is at `/en`; `/` and `/documents` open the protected doc
 
 PDFs are limited to 20 MiB and 200 pages. Upload progress is shown, then the backend extracts selectable text in a bounded process. Scanned, encrypted, malformed and oversized PDFs return explicit errors. A timed-out upload is never replayed automatically: refresh the document before retrying. PDF content and audio stay behind session-checked routes; no storage paths or provider keys reach the browser.
 
-The document view includes the original PDF, extracted text, linked audio, and the existing transcript/notes panel. PDFs do not yet generate AI summaries or use OCR. The backend's `docs/documents.md` describes storage, limits and migration requirements.
+The study workspace keeps original material, summary notes, timestamped transcripts and audio together. Source links open PDF pages or seek lecture audio. Generated document notes support English and Korean; original recording summaries remain available. OCR is not included.
+
+Quizzes support multiple choice, true/false or mixed questions with 5, 10 or 15 questions. FastAPI grades complete submissions, saves attempts and creates mistake-only retries without another model request. Answer keys are absent from unsolved quiz responses.
+
+The tutor saves private conversations and streams answers grounded in selected document excerpts. Answer source cards show the actual passages supplied as context; they do not prove every generated sentence is correct. Interrupted replies remain visibly incomplete, and completed requests can be retried without generating a second answer.
+
+Browser recording supports microphone permissions, pause/resume, preview, save retries and unsaved-audio protection. Saving reuses the resumable upload API and attaches the accepted recording to the document. Capture follows the server duration policy and stops at a 64 MiB browser memory bound. A local download is available before saving; live summaries are a later feature.
+
+AI stays disabled until configured privately in the backend. Fixture results are explicitly labelled synthetic. See the backend's `docs/study.md`, `docs/tutor.md` and `docs/documents.md` for generation limits, storage and migrations.
