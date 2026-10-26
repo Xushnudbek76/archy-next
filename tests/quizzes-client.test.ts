@@ -160,3 +160,119 @@ test('submission refuses a valid score belonging to different selected answers',
     /Quiz data/,
   );
 });
+
+test('attempt history is bounded and scoped to the selected quiz', async (t) => {
+  const { listQuizAttempts } = await import('../api/quizzes-client.ts');
+  const { isQuiz } = await import('../libs/types/quizzes.ts');
+  assert(isQuiz(quizFixture));
+  let foreign = false;
+  t.mock.method(globalThis, 'fetch', async () =>
+    Response.json({
+      items: [
+        {
+          id: documentId,
+          quizId: foreign ? documentId : quizFixture.id,
+          score: 0,
+          total: 1,
+          createdAt: quizFixture.createdAt,
+          results: [
+            {
+              questionId: quizFixture.questions[0]!.id,
+              answer: 1,
+              correctAnswer: 0,
+              correct: false,
+              explanation: 'Inertia.',
+              sourceIds: ['pdf:source'],
+            },
+          ],
+        },
+      ],
+    }),
+  );
+  assert.equal((await listQuizAttempts(quizFixture))[0]?.score, 0);
+  foreign = true;
+  await assert.rejects(listQuizAttempts(quizFixture), /Quiz data/);
+});
+
+test('mistake retry sends its persisted attempt and rejects unrelated returned questions', async (t) => {
+  const { retryQuiz } = await import('../api/quizzes-client.ts');
+  const { isQuiz, isQuizAttempt } = await import('../libs/types/quizzes.ts');
+  assert(isQuiz(quizFixture));
+  const attempt = {
+    id: documentId,
+    quizId: quizFixture.id,
+    score: 0,
+    total: 1,
+    createdAt: quizFixture.createdAt,
+    results: [
+      {
+        questionId: quizFixture.questions[0]!.id,
+        answer: 1,
+        correctAnswer: 0,
+        correct: false,
+        explanation: 'Inertia.',
+        sourceIds: ['pdf:source'],
+      },
+    ],
+  };
+  assert(isQuizAttempt(attempt, quizFixture));
+  let wrongQuestion = false;
+  t.mock.method(
+    globalThis,
+    'fetch',
+    async (path: string, init?: RequestInit) => {
+      if (path === '/api/auth/csrf')
+        return Response.json({ csrfToken: 'csrf' });
+      assert.equal(path, `/api/study/quizzes/${quizFixture.id}/retry`);
+      assert.deepEqual(JSON.parse(String(init?.body)), {
+        attemptId: documentId,
+      });
+      return Response.json({
+        ...quizFixture,
+        id: documentId,
+        questions: [
+          {
+            ...quizFixture.questions[0],
+            id: wrongQuestion ? documentId : quizFixture.questions[0]!.id,
+          },
+        ],
+      });
+    },
+  );
+  assert.equal(
+    (await retryQuiz(quizFixture, attempt)).questions[0]?.id,
+    quizFixture.questions[0]!.id,
+  );
+  wrongQuestion = true;
+  await assert.rejects(retryQuiz(quizFixture, attempt), /Quiz data/);
+});
+
+test('perfect attempts have no mistake retry and never start a request', async (t) => {
+  const { retryQuiz } = await import('../api/quizzes-client.ts');
+  const { isQuiz, isQuizAttempt } = await import('../libs/types/quizzes.ts');
+  assert(isQuiz(quizFixture));
+  const attempt = {
+    id: documentId,
+    quizId: quizFixture.id,
+    score: 1,
+    total: 1,
+    createdAt: quizFixture.createdAt,
+    results: [
+      {
+        questionId: quizFixture.questions[0]!.id,
+        answer: 0,
+        correctAnswer: 0,
+        correct: true,
+        explanation: 'Inertia.',
+        sourceIds: ['pdf:source'],
+      },
+    ],
+  };
+  assert(isQuizAttempt(attempt, quizFixture));
+  t.mock.method(globalThis, 'fetch', async () => {
+    assert.fail('perfect attempt must not request retry');
+  });
+  await assert.rejects(retryQuiz(quizFixture, attempt), {
+    code: 'no_incorrect_answers',
+  });
+});

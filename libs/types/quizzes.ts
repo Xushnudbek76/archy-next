@@ -1,5 +1,5 @@
 import { documentId } from './documents.ts';
-import { boundedText, object, type StudyLanguage } from './study.ts';
+import { object, type StudyLanguage } from './study.ts';
 
 export type QuizQuestion = {
   id: string;
@@ -23,7 +23,9 @@ export type QuizSettings = {
   language: StudyLanguage;
 };
 const text = (value: unknown, max: number): value is string =>
-  boundedText(value, max) && value.trim().length > 0;
+  typeof value === 'string' &&
+  value.trim().length > 0 &&
+  Array.from(value).length <= max;
 const unique = (values: string[]) => new Set(values).size === values.length;
 function isQuestion(value: unknown): value is QuizQuestion {
   return (
@@ -119,8 +121,7 @@ export function isQuizAttempt(
         Array.isArray(result.sourceIds) &&
         result.sourceIds.length >= 1 &&
         result.sourceIds.length <= 20 &&
-        result.sourceIds.every((id) => text(id, 160)) &&
-        unique(result.sourceIds),
+        result.sourceIds.every((id) => text(id, 160)),
     )
   )
     return false;

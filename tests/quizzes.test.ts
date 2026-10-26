@@ -119,3 +119,13 @@ test('attempt guards verify server score consistency and option bounds against i
     false,
   );
 });
+
+test('quiz text bounds count Unicode characters consistently with the API', () => {
+  assert.equal(
+    isQuiz({
+      ...quizFixture,
+      questions: [{ ...quizFixture.questions[0], prompt: '🔬'.repeat(500) }],
+    }),
+    true,
+  );
+});

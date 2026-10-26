@@ -14,7 +14,7 @@ type Props = {
 export function DocumentQuizzes(props: Props) {
   return <QuizDocument key={props.documentId} {...props} />;
 }
-function QuizDocument({ documentId }: Props) {
+function QuizDocument({ documentId, sources, onSource }: Props) {
   const [settings, setSettings] = useState<QuizSettings>({
     questionType: 'mixed',
     questionCount: 5,
@@ -72,6 +72,17 @@ function QuizDocument({ documentId }: Props) {
         key={selected.id}
         quiz={selected}
         onBack={() => setSelected(null)}
+        sources={sources}
+        onSource={onSource}
+        onRetry={(quiz) => {
+          setQuizzes((items) =>
+            [
+              quiz,
+              ...(items ?? []).filter((item) => item.id !== quiz.id),
+            ].slice(0, 50),
+          );
+          setSelected(quiz);
+        }}
       />
     );
   return (

@@ -23,6 +23,7 @@ export function initialQuizSession(quiz: Quiz): QuizSession {
   };
 }
 type Action =
+  | { type: 'reset' }
   | { type: 'answer'; questionId: string; answer: number }
   | { type: 'move'; index: number }
   | { type: 'submitting' }
@@ -32,6 +33,7 @@ export function quizSessionReducer(
   state: QuizSession,
   action: Action,
 ): QuizSession {
+  if (action.type === 'reset') return initialQuizSession(state.quiz);
   if (action.type === 'answer') {
     if (state.pending || state.attempt) return state;
     const question = state.quiz.questions.find(

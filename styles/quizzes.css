@@ -103,3 +103,39 @@
 .quiz-question input {
   flex: 0 0 auto;
 }
+.quiz-score {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.quiz-result-list {
+  display: grid;
+  gap: 1rem;
+  padding-left: 1.5rem;
+}
+.quiz-result-list > li {
+  padding: 1rem;
+  border: 1px solid #dedbd4;
+  border-radius: 12px;
+}
+.quiz-result-list h4 {
+  margin-top: 0;
+  line-height: 1.6;
+}
+.quiz-result-list p {
+  line-height: 1.6;
+}
+.quiz-result-state {
+  font-weight: 700;
+}
+.quiz-result-list .correct .quiz-result-state {
+  color: #335c38;
+}
+.quiz-result-list .incorrect .quiz-result-state {
+  color: #943d30;
+}
+.quiz-attempts ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}

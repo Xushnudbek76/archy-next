@@ -112,3 +112,73 @@ export async function submitQuizAttempt(
     ? value
     : invalid();
 }
+
+export async function listQuizAttempts(
+  quiz: Quiz,
+  signal?: AbortSignal,
+): Promise<QuizAttempt[]> {
+  const value = await jsonRequest(
+    quizPath(quiz.id, 'attempts'),
+    undefined,
+    'POST',
+    { signal },
+  );
+  signal?.throwIfAborted();
+  if (
+    !object(value) ||
+    !Array.isArray(value.items) ||
+    value.items.length > 100 ||
+    !value.items.every((item) => isQuizAttempt(item, quiz)) ||
+    new Set(value.items.map((item) => item.id)).size !== value.items.length
+  )
+    return invalid();
+  return value.items;
+}
+export async function retryQuiz(
+  quiz: Quiz,
+  attempt: QuizAttempt,
+  signal?: AbortSignal,
+): Promise<Quiz> {
+  if (!isQuizAttempt(attempt, quiz)) return invalid();
+  const mistakes = new Set(
+    attempt.results
+      .filter((result) => !result.correct)
+      .map((result) => result.questionId),
+  );
+  if (!mistakes.size)
+    throw new ApiError(
+      409,
+      'no_incorrect_answers',
+      'Every answer was correct. There are no mistakes to retry.',
+    );
+  const value = await jsonRequest(
+    quizPath(quiz.id, 'retry'),
+    { attemptId: attempt.id },
+    'POST',
+    { signal },
+  );
+  signal?.throwIfAborted();
+  if (
+    !isQuiz(value) ||
+    value.id === quiz.id ||
+    value.documentId !== quiz.documentId ||
+    value.sourceRevision !== quiz.sourceRevision ||
+    value.language !== quiz.language ||
+    value.provider !== quiz.provider ||
+    value.questions.length !== mistakes.size ||
+    !value.questions.every((question) => {
+      const original = quiz.questions.find((item) => item.id === question.id);
+      return (
+        mistakes.has(question.id) &&
+        !!original &&
+        question.prompt === original.prompt &&
+        question.type === original.type &&
+        question.options.every(
+          (option, index) => option === original.options[index],
+        )
+      );
+    })
+  )
+    return invalid();
+  return value;
+}
