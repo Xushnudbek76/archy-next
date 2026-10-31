@@ -2,6 +2,8 @@ import { forwardJsonRequest, type AuthConfiguration } from './json-proxy.ts';
 export { authConfiguration, sessionCookies } from './json-proxy.ts';
 export type { AuthConfiguration } from './json-proxy.ts';
 const routes: Record<string, { path: string; method: string }> = {
+  demo: { path: '/v1/demo/session', method: 'POST' },
+  'demo-status': { path: '/v1/demo', method: 'GET' },
   csrf: { path: '/v1/auth/csrf', method: 'GET' },
   signup: { path: '/v1/auth/signup', method: 'POST' },
   login: { path: '/v1/auth/login', method: 'POST' },

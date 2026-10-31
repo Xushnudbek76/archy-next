@@ -17,7 +17,11 @@ const features = [
   },
 ];
 
-export function LandingPage() {
+export function LandingPage({
+  demoAvailable = false,
+}: {
+  demoAvailable?: boolean;
+}) {
   return (
     <div className="landing">
       <header className="landing-header">
@@ -50,6 +54,11 @@ export function LandingPage() {
             <Link href="/login?next=%2Fdocuments" className="primary-button">
               Get started
             </Link>
+            {demoAvailable ? (
+              <Link href="/demo" className="secondary-button">
+                Try the demo
+              </Link>
+            ) : null}
             <a href="#features" className="secondary-button">
               Explore Archy
             </a>

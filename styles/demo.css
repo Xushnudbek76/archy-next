@@ -1,0 +1,20 @@
+.demo-page {
+  max-width: 760px;
+  margin: 8vh auto;
+  padding: 32px 24px;
+}
+.demo-page h1 {
+  margin: 48px 0 24px;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.15;
+}
+.demo-page p {
+  margin: 20px 0;
+  line-height: 1.7;
+}
+.demo-links {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}

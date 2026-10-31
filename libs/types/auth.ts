@@ -3,6 +3,7 @@ export type User = {
   email: string;
   displayName: string;
   role: 'USER' | 'ADMIN';
+  isDemo?: boolean;
 };
 export type LoginInput = { email: string; password: string };
 export type SignupInput = LoginInput & {
@@ -26,6 +27,7 @@ export function isUser(value: unknown): value is User {
     user.email.length <= 254 &&
     typeof user.displayName === 'string' &&
     user.displayName.length <= 100 &&
+    (user.isDemo === undefined || typeof user.isDemo === 'boolean') &&
     (user.role === 'USER' || user.role === 'ADMIN')
   );
 }

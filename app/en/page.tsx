@@ -1,3 +1,4 @@
+import { demoAvailable } from '@/api/demo';
 import type { Metadata } from 'next';
 import { LandingPage } from '@/libs/components/marketing/LandingPage';
 import '@/styles/landing.css';
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
   description:
     'Keep lecture PDFs, recordings, transcripts and notes together in one private course workspace.',
 };
-export default function PublicHomePage() {
-  return <LandingPage />;
+export const dynamic = 'force-dynamic';
+export default async function PublicHomePage() {
+  return <LandingPage demoAvailable={await demoAvailable()} />;
 }
