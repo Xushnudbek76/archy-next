@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 import { useEffect, useRef, useState } from 'react';
 import type { DocumentDetail } from '@/libs/types/documents';
 import { useProcessing } from '@/libs/hooks/useProcessing';
@@ -22,6 +23,7 @@ export function StudyWorkspace({
   document: DocumentDetail;
   onSaved: () => void;
 }) {
+  const readOnly = useDemo();
   const [panel, setPanel] = useState('material');
   const audio = useRef<HTMLAudioElement>(null);
   const [loadedSources, setLoadedSources] = useState<{
@@ -179,16 +181,20 @@ export function StudyWorkspace({
           />
         ) : (
           <section className="document-material surface">
-            <UploadPdf id={document.id} onSaved={onSaved} />
+            {!readOnly ? (
+              <UploadPdf id={document.id} onSaved={onSaved} />
+            ) : null}
           </section>
         )}
         <section className="document-material surface">
-          <AttachRecording
-            key={document.recordingId ?? 'none'}
-            id={document.id}
-            current={document.recordingId}
-            onSaved={onSaved}
-          />
+          {!readOnly ? (
+            <AttachRecording
+              key={document.recordingId ?? 'none'}
+              id={document.id}
+              current={document.recordingId}
+              onSaved={onSaved}
+            />
+          ) : null}
         </section>
       </section>
       <section
@@ -308,14 +314,16 @@ export function StudyWorkspace({
           onSource={showSource}
         />
       </section>
-      <details className="document-material surface">
-        <summary>Record a lecture</summary>
-        <BrowserRecorder
-          documentId={document.id}
-          courseId={document.courseId}
-          onSaved={onSaved}
-        />
-      </details>
+      {!readOnly ? (
+        <details className="document-material surface">
+          <summary>Record a lecture</summary>
+          <BrowserRecorder
+            documentId={document.id}
+            courseId={document.courseId}
+            onSaved={onSaved}
+          />
+        </details>
+      ) : null}
     </section>
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 import { useRecordings } from '@/libs/hooks/useRecordings';
 import { useUpload } from '@/libs/hooks/useUpload';
 import { UploadForm } from './UploadForm';
@@ -6,6 +7,7 @@ import { RecordingCard } from './RecordingCard';
 import { PendingUpload } from './PendingUpload';
 
 export function RecordingsWorkspace() {
+  const readOnly = useDemo();
   const list = useRecordings();
   const upload = useUpload(() => list.refresh(1, 1));
   const percent = Math.min(
@@ -19,7 +21,9 @@ export function RecordingsWorkspace() {
       <p className="page-intro">
         Keep your lectures together, ready when you need them.
       </p>
-      <UploadForm pending={upload.pending} onUpload={upload.start} />
+      <fieldset disabled={readOnly} className="demo-controls">
+        <UploadForm pending={upload.pending} onUpload={upload.start} />
+      </fieldset>
       {upload.error ? (
         <p className="course-error" role="alert" aria-label="Upload error">
           {upload.error}

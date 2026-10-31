@@ -12,7 +12,7 @@ export type Quiz = {
   documentId: string;
   title: string;
   language: StudyLanguage;
-  provider: 'fixture' | 'groq';
+  provider: 'fixture' | 'groq' | 'demo';
   sourceRevision: string;
   createdAt: string;
   questions: QuizQuestion[];
@@ -49,7 +49,7 @@ export function isQuiz(value: unknown): value is Quiz {
     documentId(value.documentId) &&
     text(value.title, 100) &&
     ['en', 'ko'].includes(String(value.language)) &&
-    ['fixture', 'groq'].includes(String(value.provider)) &&
+    ['fixture', 'groq', 'demo'].includes(String(value.provider)) &&
     typeof value.sourceRevision === 'string' &&
     /^[a-f0-9]{64}$/.test(value.sourceRevision) &&
     typeof value.createdAt === 'string' &&

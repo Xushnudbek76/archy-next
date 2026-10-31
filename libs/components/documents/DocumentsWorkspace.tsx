@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createDocument, documentError } from '@/api/documents-client';
@@ -10,6 +11,7 @@ import { useDocumentFolders } from '@/libs/hooks/useDocumentFolders';
 import { Icon } from '@/libs/components/common/Icon';
 
 export function DocumentsWorkspace() {
+  const readOnly = useDemo();
   const documents = useDocuments();
   const folders = useDocumentFolders();
   const { setQuery } = documents;
@@ -45,18 +47,21 @@ export function DocumentsWorkspace() {
         </div>
         <button
           className="primary-button"
+          disabled={readOnly}
           onClick={() => dialog.current?.showModal()}
         >
           New document
         </button>
       </header>
-      <section className="documents-welcome">
-        <h2>Turn class materials into a clearer place to study.</h2>
-        <p>
-          Start with a lecture PDF or recording, then keep the materials
-          together in your course folder.
-        </p>
-      </section>
+      {!readOnly ? (
+        <section className="documents-welcome">
+          <h2>Turn class materials into a clearer place to study.</h2>
+          <p>
+            Start with a lecture PDF or recording, then keep the materials
+            together in your course folder.
+          </p>
+        </section>
+      ) : null}
       <DocumentControls
         folders={folders.folders}
         query={documents.query}
@@ -84,6 +89,7 @@ export function DocumentsWorkspace() {
           <div className="documents-grid">
             <button
               className="add-document-card"
+              disabled={readOnly}
               onClick={() => dialog.current?.showModal()}
             >
               <Icon name="book" size={28} />
@@ -95,7 +101,7 @@ export function DocumentsWorkspace() {
                 <ManageDocument
                   document={document}
                   folders={folders.folders}
-                  disabled={!folders.ready}
+                  disabled={readOnly || !folders.ready}
                   onSaved={documents.reload}
                 />
               </div>

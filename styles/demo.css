@@ -18,3 +18,20 @@
   flex-wrap: wrap;
   margin-top: 28px;
 }
+.demo-notice {
+  margin: 24px clamp(16px, 3vw, 40px);
+  padding: 20px 24px;
+  border-left: 3px solid var(--accent, #285c48);
+  background: #edf4ee;
+  border-radius: 8px;
+}
+.demo-notice p {
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+.demo-controls {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}

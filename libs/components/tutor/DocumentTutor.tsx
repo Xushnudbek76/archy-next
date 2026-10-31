@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 import { useEffect, useRef, useState } from 'react';
 import {
   conversation,
@@ -17,6 +18,7 @@ export function DocumentTutor({
   documentId: string;
   onSource: (source: StudySource) => void;
 }) {
+  const readOnly = useDemo();
   const [items, setItems] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState('');
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
@@ -155,7 +157,7 @@ export function DocumentTutor({
       <div className="study-controls">
         <button
           className="secondary-button"
-          disabled={pending || sending || loading}
+          disabled={readOnly || pending || sending || loading}
           onClick={() => void create()}
         >
           {pending ? 'Opening conversation…' : 'New conversation'}
@@ -165,7 +167,7 @@ export function DocumentTutor({
             Conversation
             <select
               value={selected}
-              disabled={sending}
+              disabled={readOnly || sending}
               onChange={(e) => {
                 setSelected(e.target.value);
                 setDetail(null);
@@ -187,7 +189,10 @@ export function DocumentTutor({
       {error ? (
         <p role="alert">
           {error}{' '}
-          <button disabled={sending} onClick={() => setRevision((n) => n + 1)}>
+          <button
+            disabled={readOnly || sending}
+            onClick={() => setRevision((n) => n + 1)}
+          >
             Reload conversations
           </button>
         </p>
@@ -212,7 +217,7 @@ export function DocumentTutor({
             id={`tutor-question-${documentId}`}
             value={draft}
             maxLength={2000}
-            disabled={sending}
+            disabled={readOnly || sending}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Explain a concept from this material…"
           />
@@ -221,7 +226,7 @@ export function DocumentTutor({
               Answer language
               <select
                 value={language}
-                disabled={sending}
+                disabled={readOnly || sending}
                 onChange={(event) =>
                   setLanguage(event.target.value as StudyLanguage)
                 }
@@ -232,7 +237,7 @@ export function DocumentTutor({
             </label>
             <button
               className="primary-button"
-              disabled={sending || !draft.trim()}
+              disabled={readOnly || sending || !draft.trim()}
             >
               {sending ? 'Preparing answer…' : 'Ask tutor'}
             </button>

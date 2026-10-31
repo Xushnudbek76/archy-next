@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { DemoNotice } from '@/libs/components/demo/DemoNotice';
+import '@/styles/demo.css';
 import { usePathname } from 'next/navigation';
 import { useRef } from 'react';
 import { Brand } from '@/libs/components/common/Brand';
@@ -126,6 +128,7 @@ export function WorkspaceLayout({ children }: { children: React.ReactNode }) {
           </div>
         ) : null}
         <main id="main-content" tabIndex={-1}>
+          <DemoNotice />
           {children}
         </main>
         <footer className="page-footer">

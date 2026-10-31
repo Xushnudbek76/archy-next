@@ -14,13 +14,20 @@ export function TutorMessages({
         <article className={`tutor-message ${message.role}`} key={message.id}>
           <strong>{message.role === 'user' ? 'You' : 'Archy tutor'}</strong>
           <p>{message.text}</p>
+          {message.provider === 'demo' ? (
+            <p className="muted">
+              Hand-written sample answer. No live AI request was made.
+            </p>
+          ) : null}
           {message.provider === 'fixture' ? (
             <p className="muted">Synthetic test fixture.</p>
           ) : null}
           {message.sources.length ? (
             <div>
               <p className="muted">
-                Answer sources · passages supplied to the tutor
+                {message.provider === 'demo'
+                  ? 'Sample answer sources'
+                  : 'Answer sources · passages supplied to the tutor'}
               </p>
               <SourceLinks
                 ids={message.sources.map((source) => source.id)}

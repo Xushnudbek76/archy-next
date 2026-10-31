@@ -19,7 +19,7 @@ export function DocumentCard({ document }: { document: Document }) {
           <h2>{document.title}</h2>
           <p>
             {document.hasPdf
-              ? `${document.pageCount ?? ''} pages`
+              ? `${document.pageCount ?? ''} ${document.pageCount === 1 ? 'page' : 'pages'}`
               : 'Your lecture material'}
           </p>
           <time dateTime={document.updatedAt}>

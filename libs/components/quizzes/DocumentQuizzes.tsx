@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 
 import { useEffect, useRef, useState } from 'react';
 import { QuizPlayer } from './QuizPlayer';
@@ -15,6 +16,7 @@ export function DocumentQuizzes(props: Props) {
   return <QuizDocument key={props.documentId} {...props} />;
 }
 function QuizDocument({ documentId, sources, onSource }: Props) {
+  const readOnly = useDemo();
   const [settings, setSettings] = useState<QuizSettings>({
     questionType: 'mixed',
     questionCount: 5,
@@ -95,7 +97,7 @@ function QuizDocument({ documentId, sources, onSource }: Props) {
           void generate();
         }}
       >
-        <fieldset disabled={pending} className="quiz-setup">
+        <fieldset disabled={readOnly || pending} className="quiz-setup">
           <legend>Create a quiz</legend>
           <label>
             Question type
@@ -194,7 +196,11 @@ function QuizDocument({ documentId, sources, onSource }: Props) {
                 {quiz.questions.length} questions ·{' '}
                 {quiz.language === 'ko' ? '한국어' : 'English'} ·{' '}
                 {new Date(quiz.createdAt).toLocaleDateString()}
-                {quiz.provider === 'fixture' ? ' · Test fixture' : ''}
+                {quiz.provider === 'demo'
+                  ? ' · Sample quiz'
+                  : quiz.provider === 'fixture'
+                    ? ' · Test fixture'
+                    : ''}
               </span>
             </li>
           ))}

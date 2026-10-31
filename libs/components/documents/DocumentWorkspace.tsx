@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,6 +10,7 @@ import { StudyWorkspace } from '@/libs/components/study/StudyWorkspace';
 import { ManageDocument } from './ManageDocument';
 
 export function DocumentWorkspace({ id }: { id: string }) {
+  const readOnly = useDemo();
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
@@ -67,7 +69,7 @@ export function DocumentWorkspace({ id }: { id: string }) {
             <ManageDocument
               document={document}
               folders={folders.folders}
-              disabled={!folders.ready}
+              disabled={readOnly || !folders.ready}
               onSaved={refresh}
             />
           </header>

@@ -198,3 +198,16 @@ The tutor saves private conversations and streams answers grounded in selected d
 Browser recording supports microphone permissions, pause/resume, preview, save retries and unsaved-audio protection. Saving reuses the resumable upload API and attaches the accepted recording to the document. Capture follows the server duration policy and stops at a 64 MiB browser memory bound. A local download is available before saving; live summaries are a later feature.
 
 AI stays disabled until configured privately in the backend. Fixture results are explicitly labelled synthetic. See the backend's `docs/study.md`, `docs/tutor.md` and `docs/documents.md` for generation limits, storage and migrations.
+
+## Sample workspace
+
+When the backend enables its seeded demo, `/en` offers **Try the demo** and `/demo`
+opens a 15-minute read-only session. An existing signed-in visitor continues to their
+own workspace instead. Sample documents, notes, saved quiz scores and tutor answers
+use real private API/database reads, while all sample content is labelled hand-written.
+The demo never calls an AI provider. Normal accounts retain the existing write flows.
+
+For local browser verification, first migrate the disposable test database, then run
+`TEST_DEMO_ENABLED=true .venv-fastapi/bin/python -m scripts.test_server` in the API repo.
+In this repo run `REAL_API=1 npm run test:e2e -- e2e/demo.spec.ts`. Stop that server before
+running fixture browser tests on the same port. Backend setup is in `docs/demo.md`.

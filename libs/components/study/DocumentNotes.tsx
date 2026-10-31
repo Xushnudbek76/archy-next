@@ -1,4 +1,6 @@
 'use client';
+import { resultCaption } from '@/libs/components/demo/result-caption';
+import { useDemo } from '@/libs/hooks/useDemo';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { studyNotes, studyError } from '@/api/study-client';
 import type {
@@ -18,6 +20,7 @@ export function DocumentNotes({
   onSource: (source: StudySource) => void;
   children: ReactNode;
 }) {
+  const readOnly = useDemo();
   const [notes, setNotes] = useState<StudyNotes | null>(null);
   const [language, setLanguage] = useState<StudyLanguage>('en');
   const [pending, setPending] = useState(false);
@@ -67,7 +70,7 @@ export function DocumentNotes({
           Notes language
           <select
             value={language}
-            disabled={pending}
+            disabled={readOnly || pending}
             onChange={(e) => setLanguage(e.target.value as StudyLanguage)}
           >
             <option value="en">English</option>
@@ -76,7 +79,7 @@ export function DocumentNotes({
         </label>
         <button
           className="primary-button"
-          disabled={pending || !sources.length}
+          disabled={readOnly || pending || !sources.length}
           onClick={() => void generate()}
         >
           {pending
@@ -95,11 +98,7 @@ export function DocumentNotes({
       {error ? <p role="alert">{error}</p> : null}
       {notes?.available ? (
         <section lang={notes.language}>
-          <p className="muted">
-            {notes.provider === 'fixture' ? 'Synthetic test fixture. ' : ''}
-            AI-generated from this document. Check important details against its
-            sources.
-          </p>
+          <p className="muted">{resultCaption(notes.provider)}</p>
           <h3>Overview</h3>
           <p>{notes.overview}</p>
           {notes.sections.map((section, index) => (

@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 
 import { useCourses } from '@/libs/hooks/useCourses';
 import { createCourse } from '@/api/courses-client';
@@ -6,6 +7,7 @@ import { CourseForm } from './CourseForm';
 import { CourseCard } from './CourseCard';
 
 export function CoursesWorkspace() {
+  const readOnly = useDemo();
   const { list, loading, loadError, error, pending, query, navigate, mutate } =
     useCourses();
   return (
@@ -40,7 +42,7 @@ export function CoursesWorkspace() {
           Refresh courses
         </button>
       </div>
-      {!query.archived ? (
+      {!query.archived && !readOnly ? (
         <div className="course-create">
           <h2>Add a course</h2>
           <CourseForm
@@ -88,7 +90,7 @@ export function CoursesWorkspace() {
                 <CourseCard
                   key={course.id}
                   course={course}
-                  pending={pending}
+                  pending={pending || readOnly}
                   mutate={mutate}
                 />
               ))}

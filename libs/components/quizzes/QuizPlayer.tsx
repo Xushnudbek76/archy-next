@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
@@ -28,6 +29,7 @@ export function QuizPlayer({
   onSource: (source: StudySource) => void;
   onRetry: (quiz: Quiz) => void;
 }) {
+  const readOnly = useDemo();
   const [state, dispatch] = useReducer(
     quizSessionReducer,
     quiz,
@@ -43,6 +45,7 @@ export function QuizPlayer({
       .then((items) => {
         if (!abort.signal.aborted) {
           setAttempts(items);
+          if (readOnly && items[0]) setReviewed(items[0]);
           setHistoryError('');
         }
       })
@@ -50,7 +53,7 @@ export function QuizPlayer({
         if (!abort.signal.aborted) setHistoryError(quizError(cause));
       });
     return () => abort.abort();
-  }, [quiz, historyRevision]);
+  }, [quiz, historyRevision, readOnly]);
   const controller = useRef<AbortController | null>(null);
   const dirty = Object.keys(state.answers).length > 0 && !state.attempt;
   useEffect(() => () => controller.current?.abort(), []);
@@ -119,6 +122,11 @@ export function QuizPlayer({
         Back to quizzes
       </button>
       <h2>{quiz.title}</h2>
+      {quiz.provider === 'demo' ? (
+        <p className="course-caption">
+          Hand-written sample quiz and saved result.
+        </p>
+      ) : null}
       {quiz.provider === 'fixture' ? (
         <p className="course-caption">Test fixture questions</p>
       ) : null}
@@ -161,7 +169,10 @@ export function QuizPlayer({
               </button>
             ))}
           </nav>
-          <fieldset disabled={state.pending} className="quiz-question">
+          <fieldset
+            disabled={readOnly || state.pending}
+            className="quiz-question"
+          >
             <legend>{question.prompt}</legend>
             {question.options.map((option, index) => (
               <label
@@ -209,7 +220,9 @@ export function QuizPlayer({
             <button
               type="submit"
               className="primary-button"
-              disabled={state.pending || answered !== quiz.questions.length}
+              disabled={
+                readOnly || state.pending || answered !== quiz.questions.length
+              }
             >
               {state.pending ? 'Submitting answers…' : 'Submit answers'}
             </button>

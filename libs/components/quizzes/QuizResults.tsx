@@ -1,4 +1,5 @@
 'use client';
+import { useDemo } from '@/libs/hooks/useDemo';
 
 import { useEffect, useRef, useState } from 'react';
 import { quizError, retryQuiz } from '@/api/quizzes-client';
@@ -22,6 +23,7 @@ export function QuizResults({
   onRetry: (quiz: Quiz) => void;
   onAgain: () => void;
 }) {
+  const readOnly = useDemo();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const request = useRef<AbortController | null>(null);
@@ -56,7 +58,7 @@ export function QuizResults({
           <button
             type="button"
             className="primary-button"
-            disabled={pending}
+            disabled={readOnly || pending}
             onClick={() => void retry()}
           >
             {pending
@@ -69,7 +71,7 @@ export function QuizResults({
         <button
           type="button"
           className="secondary-button"
-          disabled={pending}
+          disabled={readOnly || pending}
           onClick={onAgain}
         >
           Take this quiz again
