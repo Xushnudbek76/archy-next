@@ -2,12 +2,14 @@ import type { NextConfig } from 'next';
 import path from 'node:path';
 
 const nextConfig: NextConfig = {
+  output: process.env.NEXT_STANDALONE === 'true' ? 'standalone' : undefined,
   turbopack: { root: path.resolve(process.cwd()) },
   distDir: process.env.NEXT_BUILD_DIR ?? '.next',
   poweredByHeader: false,
   agentRules: false,
   async headers() {
     return [
+      '/demo',
       '/login',
       '/signup',
       '/forgot-password',

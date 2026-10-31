@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+.next*
+.env*
+.local
+.superpowers
+test-results
+playwright-report
+*.log
