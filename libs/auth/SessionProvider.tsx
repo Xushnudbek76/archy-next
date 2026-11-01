@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  Fragment,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthError } from '@/api/auth-client';
 import { currentUser, logOut } from '@/libs/auth';
@@ -99,7 +106,7 @@ export function SessionProvider({
         retry: failure?.action === 'signOut' ? signOut : checkSession,
       }}
     >
-      {children}
+      <Fragment key={user.id}>{children}</Fragment>
     </SessionContext.Provider>
   );
 }

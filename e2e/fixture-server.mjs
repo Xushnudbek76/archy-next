@@ -37,6 +37,8 @@ createServer(async (request, response) => {
       requestId: randomUUID(),
     });
   if (path === '/v1/health/live') return reply(200, { status: 'ok' });
+  if (path === '/v1/oauth/providers' && request.method === 'GET')
+    return reply(200, { items: [] });
   if (path?.startsWith('/mail?'))
     return reply(200, {
       link: emails.get(
@@ -54,6 +56,18 @@ createServer(async (request, response) => {
     return fail(503);
   if (path === '/v1/users/me')
     return user ? reply(200, user.profile) : fail(403);
+  if (path === '/v1/preferences' && request.method === 'GET')
+    return user
+      ? reply(200, {
+          displayName: user.profile.displayName,
+          email: user.profile.email,
+          university: '',
+          department: '',
+          uiLanguage: 'en',
+          summaryLanguage: 'auto',
+          noteFormat: 'outline',
+        })
+      : fail(403);
   if (
     recordingsFixture(request, response, user, courses, data, reply, fail, csrf)
   )

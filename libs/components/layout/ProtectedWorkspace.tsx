@@ -4,6 +4,7 @@ import { SessionProvider } from '@/libs/auth/SessionProvider';
 import { SessionRetry } from '@/libs/components/account/SessionRetry';
 import { safeReturnPath } from '@/libs/types/auth';
 import { WorkspaceLayout } from './WorkspaceLayout';
+import { PreferencesProvider } from '@/libs/preferences/PreferencesProvider';
 
 export async function ProtectedWorkspace({
   children,
@@ -24,7 +25,9 @@ export async function ProtectedWorkspace({
   if (!user) redirect(`/login?next=${encodeURIComponent(destination)}`);
   return (
     <SessionProvider initialUser={user}>
-      <WorkspaceLayout>{children}</WorkspaceLayout>
+      <PreferencesProvider>
+        <WorkspaceLayout>{children}</WorkspaceLayout>
+      </PreferencesProvider>
     </SessionProvider>
   );
 }

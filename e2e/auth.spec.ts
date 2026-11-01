@@ -68,10 +68,14 @@ test('account lifecycle, session refresh, logout and password recovery', async (
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL('/courses');
-  await expect(page.getByText('Learning Owner', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Learning Owner', exact: true }),
+  ).toBeVisible();
   await page.reload();
   await expect(page).toHaveURL('/courses');
-  await expect(page.getByText('Learning Owner', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Learning Owner', exact: true }),
+  ).toBeVisible();
   const session = (await page.context().cookies()).find(
     (c) => c.name === 'sessionid',
   );
