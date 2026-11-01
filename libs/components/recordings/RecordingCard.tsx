@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { LectureNotes } from './LectureNotes';
+import { RecordingStudyLink } from './RecordingStudyLink';
 import type { Recording } from '@/libs/types/recordings';
 export function fileSize(bytes: number) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -55,6 +56,7 @@ export function RecordingCard({ recording }: { recording: Recording }) {
         </p>
       ) : null}
       <LectureNotes recordingId={recording.id} />
+      <RecordingStudyLink recording={recording} />
     </article>
   );
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useDemo } from '@/libs/hooks/useDemo';
+import { useStudyReadOnly } from '@/libs/components/study/StudyAccess';
 import { useEffect, useRef, useState } from 'react';
 import {
   conversation,
@@ -18,7 +18,7 @@ export function DocumentTutor({
   documentId: string;
   onSource: (source: StudySource) => void;
 }) {
-  const readOnly = useDemo();
+  const readOnly = useStudyReadOnly();
   const [items, setItems] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState('');
   const [detail, setDetail] = useState<ConversationDetail | null>(null);

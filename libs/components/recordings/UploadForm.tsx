@@ -32,7 +32,7 @@ export function UploadForm({
       (value) => {
         if (!cancelled) {
           setCourses(value);
-          setCourseId(value.items[0]?.id ?? '');
+          setCourseId(value.items.find((course) => !course.readOnly)?.id ?? '');
           setError('');
         }
       },
@@ -93,7 +93,11 @@ export function UploadForm({
               required
             >
               {courses.items.map((course) => (
-                <option key={course.id} value={course.id}>
+                <option
+                  key={course.id}
+                  value={course.id}
+                  disabled={course.readOnly}
+                >
                   {course.title}
                 </option>
               ))}

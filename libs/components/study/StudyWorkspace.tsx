@@ -1,5 +1,5 @@
 'use client';
-import { useDemo } from '@/libs/hooks/useDemo';
+import { useStudyReadOnly } from '@/libs/components/study/StudyAccess';
 import { useEffect, useRef, useState } from 'react';
 import type { DocumentDetail } from '@/libs/types/documents';
 import { useProcessing } from '@/libs/hooks/useProcessing';
@@ -23,7 +23,7 @@ export function StudyWorkspace({
   document: DocumentDetail;
   onSaved: () => void;
 }) {
-  const readOnly = useDemo();
+  const readOnly = useStudyReadOnly();
   const [panel, setPanel] = useState('material');
   const audio = useRef<HTMLAudioElement>(null);
   const [loadedSources, setLoadedSources] = useState<{

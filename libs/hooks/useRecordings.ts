@@ -10,7 +10,13 @@ import {
 import type { Page, Recording, Upload } from '@/libs/types/recordings';
 
 export function useRecordings() {
-  const [query, setQuery] = useState({ page: 1, uploadPage: 1, revision: 0 });
+  const [query, setQuery] = useState({
+    page: 1,
+    uploadPage: 1,
+    q: '',
+    courseId: '',
+    revision: 0,
+  });
   const [recordings, setRecordings] = useState<Page<Recording> | null>(null);
   const [uploads, setUploads] = useState<Page<Upload> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +25,7 @@ export function useRecordings() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      listRecordings(query.page),
+      listRecordings(query.page, undefined, query),
       listUploads(query.uploadPage),
     ]).then(
       ([saved, pending]) => {
@@ -54,7 +60,17 @@ export function useRecordings() {
   }, [query, router]);
   function refresh(page = query.page, uploadPage = query.uploadPage) {
     setLoading(true);
-    setQuery((q) => ({ page, uploadPage, revision: q.revision + 1 }));
+    setQuery((q) => ({ ...q, page, uploadPage, revision: q.revision + 1 }));
   }
-  return { recordings, uploads, loading, error, query, refresh };
+  function filter(q: string, courseId: string) {
+    setLoading(true);
+    setQuery((value) => ({
+      ...value,
+      page: 1,
+      q,
+      courseId,
+      revision: value.revision + 1,
+    }));
+  }
+  return { recordings, uploads, loading, error, query, refresh, filter };
 }

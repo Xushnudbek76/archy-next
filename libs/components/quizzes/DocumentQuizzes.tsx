@@ -1,5 +1,5 @@
 'use client';
-import { useDemo } from '@/libs/hooks/useDemo';
+import { useStudyReadOnly } from '@/libs/components/study/StudyAccess';
 
 import { useEffect, useRef, useState } from 'react';
 import { QuizPlayer } from './QuizPlayer';
@@ -16,7 +16,7 @@ export function DocumentQuizzes(props: Props) {
   return <QuizDocument key={props.documentId} {...props} />;
 }
 function QuizDocument({ documentId, sources, onSource }: Props) {
-  const readOnly = useDemo();
+  const readOnly = useStudyReadOnly();
   const [settings, setSettings] = useState<QuizSettings>({
     questionType: 'mixed',
     questionCount: 5,

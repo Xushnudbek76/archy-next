@@ -5,6 +5,8 @@ import { useUpload } from '@/libs/hooks/useUpload';
 import { UploadForm } from './UploadForm';
 import { RecordingCard } from './RecordingCard';
 import { PendingUpload } from './PendingUpload';
+import Link from 'next/link';
+import { RecordingFilters } from './RecordingFilters';
 
 export function RecordingsWorkspace() {
   const readOnly = useDemo();
@@ -21,6 +23,11 @@ export function RecordingsWorkspace() {
       <p className="page-intro">
         Keep your lectures together, ready when you need them.
       </p>
+      <div className="recordings-quick-action">
+        <Link href="/record" className="primary-button">
+          Record a new lecture
+        </Link>
+      </div>
       <fieldset disabled={readOnly} className="demo-controls">
         <UploadForm pending={upload.pending} onUpload={upload.start} />
       </fieldset>
@@ -81,6 +88,7 @@ export function RecordingsWorkspace() {
           Refresh recordings
         </button>
       </div>
+      <RecordingFilters query={list.query} onChange={list.filter} />
       {list.loading ? (
         <p role="status">Loading recordings…</p>
       ) : list.error ? (

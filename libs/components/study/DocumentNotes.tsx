@@ -1,6 +1,6 @@
 'use client';
 import { resultCaption } from '@/libs/components/demo/result-caption';
-import { useDemo } from '@/libs/hooks/useDemo';
+import { useStudyReadOnly } from '@/libs/components/study/StudyAccess';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { studyNotes, studyError } from '@/api/study-client';
 import type {
@@ -9,6 +9,7 @@ import type {
   StudySource,
 } from '@/libs/types/study';
 import { SourceLinks } from './SourceLinks';
+import { usePreferences } from '@/libs/preferences/PreferencesProvider';
 export function DocumentNotes({
   id,
   sources,
@@ -20,9 +21,12 @@ export function DocumentNotes({
   onSource: (source: StudySource) => void;
   children: ReactNode;
 }) {
-  const readOnly = useDemo();
+  const readOnly = useStudyReadOnly();
   const [notes, setNotes] = useState<StudyNotes | null>(null);
-  const [language, setLanguage] = useState<StudyLanguage>('en');
+  const preferences = usePreferences();
+  const [choice, setLanguage] = useState<StudyLanguage | null>(null);
+  const language =
+    choice ?? (preferences?.profile?.summaryLanguage === 'ko' ? 'ko' : 'en');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null);
