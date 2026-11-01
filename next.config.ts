@@ -16,6 +16,16 @@ const nextConfig: NextConfig = {
       '/confirm-email',
       '/reset-password',
       '/api/:path*',
+      '/',
+      '/dashboard',
+      '/documents/:path*',
+      '/courses',
+      '/recordings',
+      '/record',
+      '/timetable',
+      '/settings/:path*',
+      '/billing/:path*',
+      '/auth-error',
     ].map((source) => ({
       source,
       headers: [

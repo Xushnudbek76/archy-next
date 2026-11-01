@@ -176,7 +176,7 @@ link query strings. These are deployment work, separate from the implemented loc
 
 ## Contributing
 
-Use focused branches and pull requests. Run the checks before submitting. Keep real authorship
+Work on `develop` and use reviewed releases to update `master`. Run the checks before submitting. Keep real authorship
 and commit dates; use `feat` for new behavior and `fix` for actual corrections.
 
 ## Lecture processing
@@ -211,3 +211,13 @@ For local browser verification, first migrate the disposable test database, then
 `TEST_DEMO_ENABLED=true .venv-fastapi/bin/python -m scripts.test_server` in the API repo.
 In this repo run `REAL_API=1 npm run test:e2e -- e2e/demo.spec.ts`. Stop that server before
 running fixture browser tests on the same port. Backend setup is in `docs/demo.md`.
+
+## Academic workspace and settings
+
+`/dashboard` shows the selected timetable, today's classes, and recent materials. `/timetable` manages semesters, weekly meeting slots, primary/home selections, and reviewed public Everytime imports. Archived semesters stay readable. `/record` prepares an owned document before opening the existing microphone recorder; `/recordings` provides searchable history and study links.
+
+`/settings` contains account, language, note-format, notification-capability, billing, and closure screens. Korean/English navigation uses explicit copy; user material is untouched. New jobs snapshot summary language and note format. Account switches remount private UI, and preference writes carry the expected account identity.
+
+Configured social sign-in appears on account forms. `/pricing` and billing use Toss **test mode only** and verified server results. This rebuild requires its own OAuth/Toss registrations; the backend's `docs/providers-and-billing.md` describes configuration, recovery and rollout. The manifest and `/help` provide browser installation guidance. Private materials are never cached for offline access.
+
+Development stays on `develop`; reviewed releases go to `master`. Keep both repositories independent and request approval before committing or publishing.
