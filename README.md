@@ -46,8 +46,8 @@ tests/                     Transport and identity tests
 e2e/                       Browser tests and an isolated HTTP fixture
 ```
 
-Routes compose focused components under `libs/components`, following the same conventions as
-Insu and Nestar. Domain rules, passwords and database access belong to the separate
+Routes compose focused components under `libs/components`. Domain rules, authentication and
+database access belong to the separate
 [FastAPI backend](https://github.com/Xushnudbek76/archy-api). Each repository owns its dependencies,
 lockfile, environment and CI. The frontend imports no backend source or database clients.
 
