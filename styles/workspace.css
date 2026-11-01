@@ -1,112 +1,274 @@
+.workspace {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+  width: 100%;
+  max-width: 1440px;
+  min-height: 100dvh;
+  margin: auto;
+  padding: 24px;
+}
 .sidebar {
-  background: #fbfdfa;
-  padding: 32px 18px 22px;
-  width: 240px;
+  min-width: 0;
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 16px;
+}
+.sidebar-card {
+  padding: 24px;
+  border: 1px solid oklch(100% 0 0 / 0.7);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fff, var(--surface-soft));
+  box-shadow: var(--shadow);
 }
 .sidebar .brand {
-  margin: 0 12px 42px;
+  display: inline-flex;
+  margin: 0 0 20px;
+}
+.sidebar-profile {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-bottom: 22px;
+}
+.sidebar-profile h2 {
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+.sidebar-profile p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+.sidebar-card nav {
+  display: grid;
+  gap: 4px;
 }
 .nav-link {
-  min-height: 46px;
-  color: #506157;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  color: var(--muted);
   font-size: 14px;
-  border-radius: 12px;
+  transition: background 0.15s;
+}
+.nav-link:hover {
+  background: var(--surface-muted);
+  color: var(--ink);
 }
 .nav-link.active {
-  background: #e8f0e9;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 650;
+}
+.sidebar-signout {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  margin-top: 16px;
+}
+.sidebar-help {
+  padding: 20px;
+}
+.sidebar-help > svg {
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.sidebar-help h3 {
+  font-size: 15px;
+}
+.sidebar-help p {
+  margin: 8px 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.sidebar-help a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.sidebar-about {
+  font-size: 12px;
+  color: var(--muted);
+  padding-inline: 20px;
+}
+.workspace-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 48px);
 }
 .topbar {
-  padding-inline: 40px;
-  height: 80px;
-  background: var(--background);
-  border-bottom: 0;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 6px 8px 18px;
 }
 .topbar-title {
   display: flex;
   align-items: center;
-  gap: 14px;
-}
-.topbar strong {
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 18px;
-}
-.account-menu {
-  display: flex;
-  gap: 16px;
-  align-items: center;
   min-width: 0;
 }
-.account-menu a {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 220px;
+.desktop-page-label {
+  color: var(--muted);
+  font-size: 13px;
 }
-.account-menu button {
-  min-height: 44px;
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
-.menu-toggle {
+.mobile-brand,
+.menu-toggle,
+.mobile-dock {
   display: none;
 }
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 28px;
+  color: var(--muted);
+  font-size: 12px;
+}
 .navigation-drawer {
-  max-width: min(330px, 88vw);
-  width: 330px;
+  max-width: min(340px, 92vw);
+  width: 340px;
   height: 100dvh;
   max-height: 100dvh;
   margin: 0;
   border: 0;
-  border-right: 1px solid var(--line);
-  padding: 24px 18px;
+  padding: 20px;
   background: var(--background);
 }
-.navigation-drawer::backdrop {
-  background: rgb(17 26 21 / 35%);
-}
 .navigation-drawer[open] {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  align-content: start;
+  gap: 16px;
 }
-.navigation-drawer .brand {
-  margin: 24px 12px 40px;
+.navigation-drawer::backdrop {
+  background: rgb(17 26 21 / 30%);
+  backdrop-filter: blur(3px);
 }
 .drawer-close {
-  align-self: flex-end;
+  justify-self: end;
 }
-.page-content {
-  max-width: 1240px;
+.session-notice {
+  margin: 12px 8px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
-@media (max-width: 900px) {
-  .desktop-sidebar {
+.session-notice button {
+  color: inherit;
+  text-decoration: underline;
+  border: 0;
+  background: transparent;
+}
+@media (max-width: 1023px) {
+  .workspace {
+    display: block;
+    padding: 16px 16px calc(100px + env(safe-area-inset-bottom));
+  }
+  .desktop-sidebar,
+  .desktop-page-label {
     display: none;
   }
-  .menu-toggle {
-    display: inline-flex;
-    padding-inline: 12px;
+  .workspace-body {
+    min-height: calc(100dvh - 132px);
   }
   .topbar {
     padding: 16px 20px;
-    min-height: 80px;
-    height: auto;
-    gap: 10px;
+    min-height: 72px;
+    margin-bottom: 20px;
+    border: 1px solid #fff;
+    border-radius: 24px;
+    background: rgb(255 255 255 / 80%);
+    box-shadow: var(--shadow);
   }
-  .topbar strong {
-    font-size: 16px;
+  .mobile-brand,
+  .menu-toggle {
+    display: inline-flex;
   }
-  .account-menu {
-    gap: 10px;
-    font-size: 12px;
+  .mobile-dock {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px max(16px, calc((100vw - 520px) / 2))
+      calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: rgb(255 255 255 / 93%);
+    backdrop-filter: blur(24px);
   }
-  .account-menu a {
-    max-width: 120px;
+  .dock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 72px;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .dock-item > span {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 40px;
+    border-radius: 16px;
+  }
+  .dock-item[aria-current='page'] {
+    color: var(--accent);
+  }
+  .dock-item[aria-current='page'] > span {
+    background: var(--accent-soft);
+  }
+  .dock-record > span,
+  .dock-record[aria-current='page'] > span {
+    width: 46px;
+    height: 46px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 20%);
+  }
+  .page-footer {
+    padding: 24px 12px 12px;
   }
   .page-content {
-    padding: 26px 20px;
+    padding: 24px;
   }
 }
-@media (max-width: 420px) {
-  .topbar .account-menu a {
-    max-width: 70px;
+@media (max-width: 600px) {
+  .workspace {
+    padding-inline: 12px;
+  }
+  .topbar {
+    padding: 14px 16px;
+    gap: 8px;
+  }
+  .topbar .brand-lockup {
+    font-size: 24px;
+  }
+  .page-content {
+    padding: 20px;
+  }
+  .topbar-actions {
+    gap: 6px;
   }
 }

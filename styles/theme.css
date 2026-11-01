@@ -1,58 +1,42 @@
 :root {
-  --ink: #16211b;
-  --muted: #66726a;
-  --accent: #315f3c;
-  --accent-hover: #244b2d;
-  --line: #e5eae6;
-  --background: #fafcf9;
+  --background: oklch(98.8% 0.006 154);
   --surface: #fff;
-  --surface-soft: #f0f7f0;
-  --radius: 16px;
-  --shadow: 0 6px 24px rgb(24 45 30 / 4%);
+  --surface-soft: oklch(98.1% 0.007 154);
+  --surface-muted: oklch(95.5% 0.008 154);
+  --ink: oklch(17% 0.008 154);
+  --ink-strong: oklch(10% 0.006 154);
+  --muted: oklch(43% 0.015 154);
+  --accent: oklch(40% 0.085 154);
+  --accent-hover: oklch(31% 0.075 154);
+  --accent-soft: oklch(97% 0.024 154);
+  --line: oklch(22% 0.014 154 / 0.08);
+  --line-strong: oklch(85.5% 0.014 154);
+  --danger: oklch(45% 0.16 28);
+  --danger-soft: oklch(96% 0.025 28);
+  --warning: oklch(57% 0.095 78);
+  --radius: 22px;
+  --shadow:
+    0 1px 2px oklch(23% 0.067 154 / 0.045),
+    0 10px 26px -18px oklch(23% 0.067 154 / 0.16),
+    0 28px 54px -42px oklch(52% 0.08 226 / 0.16);
   --font-sans:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Noto Sans KR',
+    'Segoe UI', sans-serif;
+  --green: var(--accent);
+  --green-soft: var(--accent-soft);
+  --border: var(--line);
+  --paper: var(--surface);
+  --canvas: var(--background);
 }
 body {
   font-family: var(--font-sans);
   line-height: 1.6;
-}
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-button,
-a,
-input,
-select,
-textarea {
-  -webkit-tap-highlight-color: transparent;
-}
-button {
-  cursor: pointer;
-}
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-button:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid #83ad88;
-  outline-offset: 3px;
-}
-::selection {
-  background: #dcebdc;
-  color: var(--ink);
-}
-h1,
-h2,
-h3 {
-  text-wrap: balance;
-}
-p {
-  text-wrap: pretty;
+  background: linear-gradient(
+    180deg,
+    var(--background),
+    #fff 44%,
+    var(--surface-soft)
+  );
 }
 .brand-lockup {
   display: inline-flex;
@@ -66,6 +50,7 @@ p {
 }
 .brand-lockup img {
   flex-shrink: 0;
+  object-fit: contain;
 }
 .surface {
   background: var(--surface);
@@ -82,9 +67,12 @@ p {
   min-height: 44px;
   padding: 10px 20px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 14px;
   font-weight: 600;
   line-height: 1.4;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .primary-button {
   background: var(--accent);
@@ -95,21 +83,27 @@ p {
   background: var(--accent-hover);
 }
 .secondary-button {
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
 }
 .secondary-button:hover {
   background: var(--surface-soft);
+  border-color: var(--line-strong);
+}
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+.icon-button:hover {
+  background: var(--accent-soft);
 }
 .muted {
   color: var(--muted);
-}
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
 }

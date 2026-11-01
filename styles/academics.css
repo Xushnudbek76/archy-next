@@ -1,0 +1,291 @@
+.academic-page {
+  padding-top: 12px;
+}
+.academic-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 24px;
+}
+.academic-heading > svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 20px;
+}
+.timetable-toolbar,
+.academic-actions,
+.academic-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.timetable-toolbar {
+  justify-content: space-between;
+  margin-block: 20px 28px;
+}
+.timetable-selector {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: min(260px, 100%);
+}
+.timetable-selector select,
+.academic-form input,
+.academic-form select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 14px;
+}
+.academic-section-heading {
+  justify-content: space-between;
+  margin-block: 24px 20px;
+}
+.academic-section-heading > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.timetable-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+}
+.timetable-grid {
+  display: grid;
+  grid-template-columns: 54px repeat(7, minmax(0, 1fr));
+  min-width: 760px;
+  padding: 0 8px 16px 0;
+}
+.timetable-times {
+  position: relative;
+  border-right: 1px solid var(--line);
+  font-size: 10px;
+  color: var(--muted);
+}
+.timetable-times > span {
+  display: block;
+  text-align: center;
+  padding-top: 10px;
+}
+.timetable-times time {
+  position: absolute;
+  right: 6px;
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-50%);
+}
+.timetable-column {
+  min-width: 0;
+}
+.timetable-column h3 {
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+.timetable-day {
+  position: relative;
+  border-right: 1px solid var(--line);
+}
+.timetable-hour {
+  position: absolute;
+  inset-inline: 0;
+  height: 60px;
+  border-bottom: 1px solid var(--line);
+  pointer-events: none;
+}
+.timetable-event {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 7px;
+  padding: 7px 5px;
+  font-size: 10px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  line-height: 1.4;
+}
+.timetable-event strong {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.timetable-event:hover {
+  filter: brightness(0.98);
+  z-index: 2;
+}
+.academic-form {
+  display: grid;
+  gap: 16px;
+}
+.academic-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 550;
+  min-width: 0;
+}
+.academic-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+.academic-form .academic-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.academic-form input[type='color'] {
+  padding: 5px;
+  max-width: 100px;
+}
+.academic-form button {
+  justify-self: start;
+}
+.academic-form .schedule-editor {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.schedule-editor legend {
+  font-size: 13px;
+  font-weight: 600;
+  padding-inline: 4px;
+}
+.weekday-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.weekday-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.weekday-checkboxes input {
+  width: 16px;
+  min-height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.course-editor {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 24px;
+  margin-block: 20px;
+}
+.academic-management,
+.timetable-import {
+  padding: 24px;
+  margin-top: 28px;
+}
+.academic-management-forms {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 24px;
+}
+.semester-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 20px;
+}
+.semester-row p {
+  max-width: 480px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.semester-row button + button {
+  margin-left: 12px;
+}
+.timetable-course-list {
+  margin-top: 20px;
+}
+.timetable-course-list .academic-actions {
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.import-preview {
+  margin-top: 24px;
+}
+.import-preview ul {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.import-preview li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.import-preview li p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+.inline-rename {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+@media (max-width: 700px) {
+  .academic-page {
+    padding: 12px 4px;
+  }
+  .academic-heading {
+    padding-inline: 8px;
+  }
+  .academic-management-forms {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .academic-management,
+  .timetable-import,
+  .course-editor {
+    padding: 20px;
+  }
+  .timetable-toolbar > .academic-actions {
+    width: 100%;
+    gap: 8px;
+  }
+  .timetable-toolbar button {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .timetable-selector {
+    width: 100%;
+  }
+  .academic-section-heading {
+    padding-inline: 8px;
+  }
+}

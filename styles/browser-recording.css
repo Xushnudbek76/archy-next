@@ -1,8 +1,9 @@
 .browser-recorder {
   margin-top: 1.5rem;
   padding: 1rem;
-  border: 1px solid var(--border, #dedbd4);
-  border-radius: 12px;
+  border: 1px solid var(--border, var(--line));
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 .browser-recorder h3 {
   margin-top: 0;
