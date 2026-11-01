@@ -62,19 +62,23 @@ export function sessionCookies(raw: string | null): string {
   return (raw ?? '')
     .split(';')
     .map((part) => part.trim())
-    .filter((part) => /^(sessionid|csrftoken)=[^;\s]*$/.test(part))
+    .filter((part) => /^(sessionid|csrftoken|oauth_flow)=[^;\s]*$/.test(part))
     .join('; ');
 }
 
 function browserCookie(raw: string, secure: boolean): string | null {
   const [value, ...attributes] = raw.split(';').map((part) => part.trim());
-  if (!value || !/^(sessionid|csrftoken)=/.test(value)) return null;
+  if (!value || !/^(sessionid|csrftoken|oauth_flow)=/.test(value)) return null;
   const kept = attributes.filter(
     (attribute) => !/^(domain|path|samesite)=/i.test(attribute),
   );
-  kept.push('Path=/', 'SameSite=Lax');
+  const appleFlow =
+    value.startsWith('oauth_flow=') &&
+    secure &&
+    attributes.some((attribute) => /^samesite=none$/i.test(attribute));
+  kept.push('Path=/', appleFlow ? 'SameSite=None' : 'SameSite=Lax');
   if (
-    value.startsWith('sessionid=') &&
+    /^(sessionid|oauth_flow)=/.test(value) &&
     !kept.some((a) => /^httponly$/i.test(a))
   )
     kept.push('HttpOnly');
@@ -82,7 +86,7 @@ function browserCookie(raw: string, secure: boolean): string | null {
   return [value, ...kept].join('; ');
 }
 
-async function jsonBody(request: Request): Promise<string> {
+async function jsonBody(request: Request, maximum = 16384): Promise<string> {
   if (
     !request.headers
       .get('Content-Type')
@@ -101,7 +105,7 @@ async function jsonBody(request: Request): Promise<string> {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 16384) {
+      if (size > maximum) {
         await reader.cancel();
         throw 413;
       }
@@ -126,6 +130,7 @@ export async function forwardJsonRequest(
         path: string;
         method: string;
         timeoutMs?: number;
+        maxBodyBytes?: number;
         errorMessages?: Readonly<Record<string, string>>;
       }
     | undefined,
@@ -150,11 +155,14 @@ export async function forwardJsonRequest(
     if (request.method !== 'GET') {
       if (request.headers.get('Origin') !== config.appOrigin)
         return errorResponse(403, id, headers);
-      body = await jsonBody(request);
+      body = await jsonBody(request, route.maxBodyBytes);
       outgoing.set('Content-Type', 'application/json');
       outgoing.set('Origin', config.appOrigin);
       const csrf = request.headers.get('X-CSRFToken');
       if (csrf) outgoing.set('X-CSRFToken', csrf);
+      const expected = request.headers.get('X-Workspace-User');
+      if (expected && /^[0-9a-f-]{36}$/i.test(expected))
+        outgoing.set('X-Workspace-User', expected);
     }
     const upstream = await fetch(`${config.apiBaseUrl}${route.path}`, {
       method: route.method,

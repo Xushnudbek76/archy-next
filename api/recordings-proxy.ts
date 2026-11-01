@@ -4,6 +4,8 @@ import { forwardAudio, forwardChunk } from './media-proxy.ts';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const errorMessages = {
+  term_archived: 'This semester is archived and read-only.',
+  document_archived: 'This recording’s study document is archived.',
   invalid_audio: 'Use a valid MP3, M4A, WAV, FLAC, Ogg or WebM audio file.',
   checksum_mismatch:
     'The file changed during upload. Please select it and start again.',
@@ -77,14 +79,36 @@ export function forwardRecordingRequest(
   parts: string[],
   supplied?: AuthConfiguration,
 ) {
-  if (!validQuery(request, parts)) return Promise.resolve(invalidQuery());
+  const query = new URL(request.url).searchParams;
+  if (
+    query.size &&
+    (parts.length > 0 ||
+      request.method !== 'GET' ||
+      [...query.keys()].some(
+        (key) =>
+          !['page', 'q', 'courseId'].includes(key) ||
+          query.getAll(key).length !== 1,
+      ) ||
+      (query.has('page') && !/^[1-9]\d{0,8}$/.test(query.get('page')!)) ||
+      (query.has('q') && Array.from(query.get('q')!).length > 100) ||
+      (query.has('courseId') && !uuid.test(query.get('courseId')!)))
+  )
+    return Promise.resolve(invalidQuery());
   if (parts.length === 2 && uuid.test(parts[0]!) && parts[1] === 'audio')
     return forwardAudio(request, parts[0]!, supplied);
   return forwardJsonRequest(
     request,
     parts.length === 0
       ? { path: `/v1/recordings${new URL(request.url).search}`, method: 'GET' }
-      : undefined,
+      : parts.length === 2 &&
+          uuid.test(parts[0]!) &&
+          parts[1] === 'study-document'
+        ? {
+            path: `/v1/recordings/${parts[0]}/study-document`,
+            method: 'POST',
+            errorMessages,
+          }
+        : undefined,
     supplied,
   );
 }

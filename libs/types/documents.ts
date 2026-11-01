@@ -1,6 +1,7 @@
 export type Document = {
   id: string;
   title: string;
+  isPinned?: boolean;
   courseId: string | null;
   recordingId: string | null;
   hasPdf: boolean;
@@ -33,6 +34,7 @@ export function isDocument(value: unknown): value is Document {
   return (
     documentId(d.id) &&
     typeof d.title === 'string' &&
+    (d.isPinned === undefined || typeof d.isPinned === 'boolean') &&
     d.title.trim().length > 0 &&
     Array.from(d.title).length <= 100 &&
     (d.courseId === null || documentId(d.courseId)) &&

@@ -15,14 +15,34 @@ function invalid(): never {
     'Recording data is temporarily unavailable.',
   );
 }
-export async function listRecordings(page = 1, signal?: AbortSignal) {
+export async function listRecordings(
+  page = 1,
+  signal?: AbortSignal,
+  filter: { q?: string; courseId?: string } = {},
+) {
+  const query = new URLSearchParams({ page: String(page) });
+  if (filter.q) query.set('q', filter.q);
+  if (filter.courseId) query.set('courseId', filter.courseId);
   const value = await jsonRequest(
-    `/api/recordings?page=${page}`,
+    `/api/recordings?${query}`,
     undefined,
     undefined,
     { signal },
   );
   return isPage(value, isRecording) ? value : invalid();
+}
+
+export async function openRecordingStudy(id: string) {
+  const value = await jsonRequest(`/api/recordings/${id}/study-document`, {});
+  if (
+    value &&
+    typeof value === 'object' &&
+    'documentId' in value &&
+    typeof value.documentId === 'string' &&
+    /^[0-9a-f-]{36}$/i.test(value.documentId)
+  )
+    return value.documentId;
+  return invalid();
 }
 export async function listUploads(page = 1) {
   const value = await jsonRequest(`/api/uploads?page=${page}`);

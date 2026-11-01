@@ -27,7 +27,11 @@ export async function jsonRequest(
   path: string,
   payload?: unknown,
   method: 'POST' | 'PATCH' = 'POST',
-  options: { signal?: AbortSignal; timeoutMs?: number } = {},
+  options: {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    expectedUserId?: string;
+  } = {},
 ): Promise<unknown> {
   try {
     let csrf: string | undefined;
@@ -49,7 +53,13 @@ export async function jsonRequest(
       headers:
         payload === undefined
           ? undefined
-          : { 'Content-Type': 'application/json', 'X-CSRFToken': csrf! },
+          : {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrf!,
+              ...(options.expectedUserId
+                ? { 'X-Workspace-User': options.expectedUserId }
+                : {}),
+            },
       body: payload === undefined ? undefined : JSON.stringify(payload),
       signal: AbortSignal.any([
         ...(options.signal ? [options.signal] : []),

@@ -41,5 +41,16 @@ export function forwardCourseRequest(
   ) {
     route = { path: `/v1/courses/${parts[0]}/archive`, method: 'POST' };
   }
-  return forwardJsonRequest(request, route, supplied);
+  return forwardJsonRequest(
+    request,
+    route
+      ? {
+          ...route,
+          errorMessages: {
+            term_archived: 'This semester is archived and read-only.',
+          },
+        }
+      : undefined,
+    supplied,
+  );
 }

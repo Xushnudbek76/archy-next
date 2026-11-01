@@ -1,4 +1,5 @@
 export type Recording = {
+  documentId?: string | null;
   id: string;
   courseId: string;
   courseTitle: string;
@@ -37,6 +38,9 @@ export function isRecording(value: unknown): value is Recording {
   const r = value as Recording;
   return (
     uuid(r.id) &&
+    (r.documentId === undefined ||
+      r.documentId === null ||
+      uuid(r.documentId)) &&
     uuid(r.courseId) &&
     typeof r.title === 'string' &&
     typeof r.courseTitle === 'string' &&

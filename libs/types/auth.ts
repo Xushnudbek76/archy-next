@@ -41,6 +41,14 @@ export function safeReturnPath(value?: string): string {
       '/courses',
       '/recordings',
       '/settings',
+      '/settings/account',
+      '/settings/language',
+      '/settings/formats',
+      '/settings/notifications',
+      '/settings/billing',
+      '/settings/close',
+      '/timetable',
+      '/record',
     ].includes(value ?? '')
   )
     return value!;

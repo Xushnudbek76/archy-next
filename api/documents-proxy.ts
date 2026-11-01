@@ -37,7 +37,22 @@ export function forwardDocumentRequest(
       path: `/v1/documents/${parts[0]}`,
       method: request.method === 'PATCH' ? 'PATCH' : 'GET',
     };
-  else if (parts.length === 2 && documentId(parts[0]) && parts[1] === 'archive')
-    route = { path: `/v1/documents/${parts[0]}/archive`, method: 'POST' };
-  return forwardJsonRequest(request, route, config);
+  else if (
+    parts.length === 2 &&
+    documentId(parts[0]) &&
+    ['archive', 'pin'].includes(parts[1]!)
+  )
+    route = { path: `/v1/documents/${parts.join('/')}`, method: 'POST' };
+  return forwardJsonRequest(
+    request,
+    route
+      ? {
+          ...route,
+          errorMessages: {
+            term_archived: 'This semester is archived and read-only.',
+          },
+        }
+      : undefined,
+    config,
+  );
 }

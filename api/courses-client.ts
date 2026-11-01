@@ -32,6 +32,8 @@ export const archiveCourse = (id: string) =>
   save(`/api/courses/${id}/archive`, {});
 
 export function courseError(cause: unknown): string {
+  if (cause instanceof ApiError && cause.code === 'term_archived')
+    return 'This semester is archived and read-only.';
   if (!(cause instanceof ApiError))
     return 'Unable to update your courses. Please try again.';
   if (cause.status === 503)

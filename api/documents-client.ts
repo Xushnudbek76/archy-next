@@ -36,12 +36,17 @@ export async function getDocument(id: string, signal?: AbortSignal) {
   );
   return isDocumentDetail(value) ? value : invalid();
 }
-export async function createDocument(title: string) {
-  const value = await jsonRequest('/api/documents', { title });
+export async function createDocument(title: string, courseId?: string) {
+  const value = await jsonRequest('/api/documents', {
+    title,
+    ...(courseId ? { courseId } : {}),
+  });
   return isDocument(value) ? value : invalid();
 }
 export function documentError(error: unknown) {
   if (error instanceof ApiError) {
+    if (error.code === 'term_archived')
+      return 'This semester is archived and read-only.';
     if (error.status === 404) return 'This document is no longer available.';
     if (error.status === 400)
       return 'Check your document details and try again.';
@@ -66,5 +71,10 @@ export async function updateDocument(
 }
 export async function archiveDocument(id: string) {
   const value = await jsonRequest(`/api/documents/${id}/archive`, {});
+  return isDocument(value) ? value : invalid();
+}
+
+export async function pinDocument(id: string, pinned: boolean) {
+  const value = await jsonRequest(`/api/documents/${id}/pin`, { pinned });
   return isDocument(value) ? value : invalid();
 }
