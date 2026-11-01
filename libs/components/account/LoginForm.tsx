@@ -6,8 +6,11 @@ import { logIn } from '@/libs/auth';
 import { useAuthForm } from '@/libs/hooks/useAuthForm';
 import { Field, PasswordField } from './AuthFields';
 import { AccountTabs, FormError } from './AuthFeedback';
+import { SocialSignIn } from './SocialSignIn';
+import { useLanguage } from '@/libs/i18n/LanguageProvider';
 
 export function LoginForm({ returnTo }: { returnTo: string }) {
+  const { text } = useLanguage();
   const router = useRouter();
   const form = useAuthForm((error) =>
     error.status === 400 || error.status === 403
@@ -17,8 +20,10 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
   return (
     <>
       <AccountTabs active="login" next={returnTo} />
-      <h1>Welcome back.</h1>
-      <p className="account-intro">Pick up where your learning left off.</p>
+      <h1>{text('Welcome back.')}</h1>
+      <p className="account-intro">
+        {text('Pick up where your learning left off.')}
+      </p>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -35,7 +40,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       >
         <fieldset disabled={form.pending}>
           <Field
-            label="Email"
+            label={text('Email')}
             name="email"
             type="email"
             autoComplete="username"
@@ -43,7 +48,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
             required
           />
           <PasswordField
-            label="Password"
+            label={text('Password')}
             name="password"
             autoComplete="current-password"
           />
@@ -51,14 +56,15 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
             className="account-text-link forgot-link"
             href="/forgot-password"
           >
-            Forgot password?
+            {text('Forgot password?')}
           </Link>
           <FormError message={form.error} />
           <button className="account-button" type="submit">
-            {form.pending ? 'Signing in…' : 'Sign in'}
+            {form.pending ? 'Signing in…' : text('Sign in')}
           </button>
         </fieldset>
       </form>
+      <SocialSignIn returnTo={returnTo} />
     </>
   );
 }

@@ -6,6 +6,7 @@ import { returnPathCookie } from '@/libs/auth/return-path';
 import { useAuthForm } from '@/libs/hooks/useAuthForm';
 import { Field, PasswordField } from './AuthFields';
 import { AccountTabs, AuthSuccess, FormError } from './AuthFeedback';
+import { SocialSignIn } from './SocialSignIn';
 
 export function SignupForm({ returnTo }: { returnTo: string }) {
   const [sent, setSent] = useState(false);
@@ -86,6 +87,7 @@ export function SignupForm({ returnTo }: { returnTo: string }) {
           </button>
         </fieldset>
       </form>
+      <SocialSignIn returnTo={returnTo} />
     </>
   );
 }
