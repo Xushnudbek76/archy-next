@@ -24,10 +24,12 @@ export function BrowserRecorder({
   documentId,
   courseId,
   onSaved,
+  initialTitle = 'Lecture recording',
 }: {
   documentId: string;
   courseId: string | null;
   onSaved: () => void;
+  initialTitle?: string;
 }) {
   const mounted = useRef(false);
   const session = useRef<BrowserRecordingSession | null>(null);
@@ -42,7 +44,7 @@ export function BrowserRecorder({
   const preview = useRef<HTMLAudioElement | null>(null);
   const saver = useRef<BrowserRecordingSave | null>(null);
   const controller = useRef<AbortController | null>(null);
-  const [title, setTitle] = useState('Lecture recording');
+  const [title, setTitle] = useState(initialTitle);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [metadataLocked, setMetadataLocked] = useState(false);
