@@ -6,6 +6,9 @@ export function DocumentCard({ document }: { document: Document }) {
     <article className="document-card">
       <Link href={`/documents/${document.id}`} className="document-card-link">
         <div className={`document-cover ${document.hasPdf ? 'pdf-cover' : ''}`}>
+          {document.isPinned ? (
+            <span className="document-pin-marker">Pinned</span>
+          ) : null}
           <Icon name={document.hasPdf ? 'book' : 'audio'} size={32} />
           <span>
             {document.hasPdf

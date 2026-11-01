@@ -90,7 +90,7 @@ export function CoursesWorkspace() {
                 <CourseCard
                   key={course.id}
                   course={course}
-                  pending={pending || readOnly}
+                  pending={pending || readOnly || !!course.readOnly}
                   mutate={mutate}
                 />
               ))}

@@ -5,15 +5,24 @@ import { useRouter } from 'next/navigation';
 import { createDocument, documentError } from '@/api/documents-client';
 import { useDocuments } from '@/libs/hooks/useDocuments';
 import { DocumentCard } from './DocumentCard';
+import { DocumentPin } from './DocumentPin';
 import { DocumentControls } from './DocumentControls';
 import { ManageDocument } from './ManageDocument';
 import { useDocumentFolders } from '@/libs/hooks/useDocumentFolders';
 import { Icon } from '@/libs/components/common/Icon';
 
-export function DocumentsWorkspace() {
+export function DocumentsWorkspace({
+  initialCourseId = '',
+}: {
+  initialCourseId?: string;
+}) {
   const readOnly = useDemo();
-  const documents = useDocuments();
+  const documents = useDocuments({ page: 1, courseId: initialCourseId });
   const folders = useDocumentFolders();
+  const selectedReadOnly =
+    readOnly ||
+    !!folders.folders.find((folder) => folder.id === documents.query.courseId)
+      ?.readOnly;
   const { setQuery } = documents;
   const changeFilter = useCallback(
     (filter: { q: string; courseId: string }) =>
@@ -31,7 +40,10 @@ export function DocumentsWorkspace() {
     setPending(true);
     setError('');
     try {
-      const document = await createDocument(title.trim());
+      const document = await createDocument(
+        title.trim(),
+        documents.query.courseId || undefined,
+      );
       router.push(`/documents/${document.id}`);
     } catch (cause) {
       setError(documentError(cause));
@@ -47,7 +59,7 @@ export function DocumentsWorkspace() {
         </div>
         <button
           className="primary-button"
-          disabled={readOnly}
+          disabled={selectedReadOnly || !folders.ready}
           onClick={() => dialog.current?.showModal()}
         >
           New document
@@ -89,7 +101,7 @@ export function DocumentsWorkspace() {
           <div className="documents-grid">
             <button
               className="add-document-card"
-              disabled={readOnly}
+              disabled={selectedReadOnly || !folders.ready}
               onClick={() => dialog.current?.showModal()}
             >
               <Icon name="book" size={28} />
@@ -98,10 +110,27 @@ export function DocumentsWorkspace() {
             {documents.data?.items.map((document) => (
               <div key={document.id}>
                 <DocumentCard document={document} />
+                <DocumentPin
+                  document={document}
+                  disabled={
+                    readOnly ||
+                    !folders.ready ||
+                    !!folders.folders.find(
+                      (folder) => folder.id === document.courseId,
+                    )?.readOnly
+                  }
+                  onSaved={documents.reload}
+                />
                 <ManageDocument
                   document={document}
                   folders={folders.folders}
-                  disabled={readOnly || !folders.ready}
+                  disabled={
+                    readOnly ||
+                    !folders.ready ||
+                    !!folders.folders.find(
+                      (folder) => folder.id === document.courseId,
+                    )?.readOnly
+                  }
                   onSaved={documents.reload}
                 />
               </div>

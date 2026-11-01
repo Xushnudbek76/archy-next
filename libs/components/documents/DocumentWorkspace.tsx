@@ -7,6 +7,7 @@ import { documentError, getDocument } from '@/api/documents-client';
 import { useDocumentFolders } from '@/libs/hooks/useDocumentFolders';
 import type { Document, DocumentDetail } from '@/libs/types/documents';
 import { StudyWorkspace } from '@/libs/components/study/StudyWorkspace';
+import { StudyAccessProvider } from '@/libs/components/study/StudyAccess';
 import { ManageDocument } from './ManageDocument';
 
 export function DocumentWorkspace({ id }: { id: string }) {
@@ -15,6 +16,13 @@ export function DocumentWorkspace({ id }: { id: string }) {
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
   const folders = useDocumentFolders();
+  const archivedSemester =
+    !!document?.courseId &&
+    folders.ready &&
+    (!folders.folders.some((folder) => folder.id === document.courseId) ||
+      !!folders.folders.find((folder) => folder.id === document.courseId)
+        ?.readOnly);
+  const locked = readOnly || !folders.ready || archivedSemester;
   const router = useRouter();
   useEffect(() => {
     const controller = new AbortController();
@@ -69,7 +77,7 @@ export function DocumentWorkspace({ id }: { id: string }) {
             <ManageDocument
               document={document}
               folders={folders.folders}
-              disabled={readOnly || !folders.ready}
+              disabled={locked}
               onSaved={refresh}
             />
           </header>
@@ -79,11 +87,19 @@ export function DocumentWorkspace({ id }: { id: string }) {
               <button onClick={folders.retry}>Retry folders</button>
             </p>
           ) : null}
-          <StudyWorkspace
-            key={id}
-            document={document}
-            onSaved={() => refresh()}
-          />
+          {archivedSemester ? (
+            <p className="muted">
+              This course or semester is archived. Your materials and saved
+              study results remain available to read.
+            </p>
+          ) : null}
+          <StudyAccessProvider readOnly={locked}>
+            <StudyWorkspace
+              key={id}
+              document={document}
+              onSaved={() => refresh()}
+            />
+          </StudyAccessProvider>
         </>
       )}
     </div>

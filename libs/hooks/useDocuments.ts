@@ -8,8 +8,8 @@ import {
 } from '@/api/documents-client';
 import type { DocumentPage } from '@/libs/types/documents';
 
-export function useDocuments() {
-  const [query, setQuery] = useState<DocumentQuery>({ page: 1 });
+export function useDocuments(initialQuery: DocumentQuery = { page: 1 }) {
+  const [query, setQuery] = useState<DocumentQuery>(initialQuery);
   const [revision, setRevision] = useState(0);
   const key = JSON.stringify({ ...query, revision });
   const [result, setResult] = useState<{
